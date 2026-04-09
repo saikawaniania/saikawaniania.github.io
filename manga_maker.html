@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>🎭 相談・自慢マンガメーカー</title>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-XXXXXXXXXX');
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Kaisei+Decol:wght@400;700&family=M+PLUS+Rounded+1c:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
 /* ===== CSS変数（テーマ） ===== */
@@ -438,6 +446,18 @@ textarea { resize: vertical; min-height: 90px; line-height: 1.6; }
 /* 生成中ロック */
 .ui-locked { pointer-events: none; opacity: .45; transition: opacity .3s; }
 
+/* 生成中の再試行ボタン */
+body.is-generating .btn-danger,
+body.is-generating .page-actions .btn-sm {
+  opacity: .38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* 再試行ボタン押下フィードバック */
+.btn-danger:active { transform: scale(.93); filter: brightness(1.2); }
+.btn-sm:not(:disabled):active { transform: scale(.93); background: var(--surface3); }
+
 /* ===== エラー表示 ===== */
 .init-error {
   background: rgba(127,29,29,.2);
@@ -583,10 +603,6 @@ textarea { resize: vertical; min-height: 90px; line-height: 1.6; }
       <button class="btn btn-sm page-count-btn" data-n="2" onclick="selectPageCount(2)">2p</button>
       <button class="btn btn-sm page-count-btn" data-n="3" onclick="selectPageCount(3)">3p</button>
       <button class="btn btn-sm page-count-btn page-count-selected" data-n="4" onclick="selectPageCount(4)">4p ★</button>
-      <button class="btn btn-sm page-count-btn" data-n="5" onclick="selectPageCount(5)">5p</button>
-      <button class="btn btn-sm page-count-btn" data-n="6" onclick="selectPageCount(6)">6p</button>
-      <button class="btn btn-sm page-count-btn" data-n="8" onclick="selectPageCount(8)">8p</button>
-      <button class="btn btn-sm page-count-btn" data-n="10" onclick="selectPageCount(10)">10p</button>
     </div>
     <div style="font-size:10px;color:var(--text-muted);margin-top:8px;">★推奨。ページ数が多いほど生成時間が長くなります。</div>
   </div>
@@ -1050,6 +1066,9 @@ function lockUI(lock){
     }
   });
   document.getElementById('stopBtn').style.display = lock ? '' : 'none';
+  // 生成中クラスをbodyに付与・解除（再試行ボタンのグレーアウト制御）
+  if(lock) document.body.classList.add('is-generating');
+  else document.body.classList.remove('is-generating');
 }
 
 // ===== 強制ストップ =====
@@ -1066,10 +1085,14 @@ function stopGeneration(){
 async function startGeneration(){
   var apiKey=document.getElementById('apiKey').value.trim();
   if(!apiKey){showToast('⚠️ APIキーを入力してください');return;}
-  if(!selectedMode){showToast('⚠️ キャラクターを選択してください');return;}
+  if(!selectedMode){showToast('⚠️ キャラクターを選んでください');return;}
   if(!systemPrompt){showToast('⚠️ システムプロンプトが読み込まれていません');return;}
   var topicCore=document.getElementById('topicText').value.trim();
   if(!topicCore){showToast('⚠️ お題を入力してください');return;}
+  // ユーザーキャラ設定チェック（名前と外見は必須とみなす）
+  var userName=document.getElementById('userName').value.trim();
+  var userAppearance=document.getElementById('userAppearance').value.trim();
+  if(!userName||!userAppearance){showToast('⚠️ あなたのキャラクターを設定してください');return;}
   var topicSuffix = selectedMode==='violetta' ? 'の悩み' : 'の自慢';
   var topic = '「'+topicCore+'」'+topicSuffix;
 
@@ -1199,7 +1222,8 @@ async function generatePage(apiKey,pageNum,topic){
 }
 
 async function retryPageImgOnly(pageNum){
-  if(isGenerating||isRetrying) return;
+  if(isGenerating){showToast('⏳ 最終ページ終了後に再試行できます');return;}
+  if(isRetrying) return;
   if(!pageYamls[pageNum-1]){retryPage(pageNum);return;}
   var apiKey=document.getElementById('apiKey').value.trim();
   if(!apiKey){showToast('⚠️ APIキーを入力してください');return;}
@@ -1244,7 +1268,8 @@ async function retryPageImgOnly(pageNum){
 }
 
 async function retryPage(pageNum){
-  if(isGenerating||isRetrying) return;
+  if(isGenerating){showToast('⏳ 最終ページ終了後に再試行できます');return;}
+  if(isRetrying) return;
   var apiKey=document.getElementById('apiKey').value.trim();
   if(!apiKey){showToast('⚠️ APIキーを入力してください');return;}
   isRetrying=true;
