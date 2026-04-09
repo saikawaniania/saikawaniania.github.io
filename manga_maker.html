@@ -1205,7 +1205,7 @@ async function generatePage(apiKey,pageNum,topic){
 
     bodyEl.innerHTML='<div class="page-img-wrap"><img src="'+imgSrc+'" alt="Page '+pageNum+'"></div>'+
       '<div class="page-actions">'+
-      '<button class="btn btn-success btn-sm" onclick="dlImage(\''+imgSrc+'\',\'manga_p'+pageNum+'.png\')">⬇️ 画像保存</button>'+
+      '<button class="btn btn-success btn-sm" onclick="dlPageImage('+pageNum+')">⬇️ 画像保存</button>'+
       '<button class="btn btn-sm" onclick="retryPageImgOnly('+pageNum+')" id="retry-'+pageNum+'">🔄 再生成</button>'+
       '</div>';
     statusEl.className='page-status done'; statusEl.textContent='✅ 完成';
@@ -1254,7 +1254,7 @@ async function retryPageImgOnly(pageNum){
     pageData[pageNum-1]={imgSrc:imgSrc};
     bodyEl.innerHTML='<div class="page-img-wrap"><img src="'+imgSrc+'" alt="Page '+pageNum+'"></div>'+
       '<div class="page-actions">'+
-      '<button class="btn btn-success btn-sm" onclick="dlImage(\''+imgSrc+'\',\'manga_p'+pageNum+'.png\')">⬇️ 画像保存</button>'+
+      '<button class="btn btn-success btn-sm" onclick="dlPageImage('+pageNum+')">⬇️ 画像保存</button>'+
       '<button class="btn btn-sm" onclick="retryPageImgOnly('+pageNum+')" id="retry-'+pageNum+'">🔄 再生成</button>'+
       '</div>';
     statusEl.className='page-status done'; statusEl.textContent='✅ 完成';
@@ -1288,6 +1288,12 @@ async function retryPage(pageNum){
 
 function dlImage(src,fn){
   var a=document.createElement('a'); a.href=src; a.download=fn; a.click();
+}
+
+function dlPageImage(pageNum){
+  var pd=pageData[pageNum-1];
+  if(!pd||!pd.imgSrc){showToast('⚠️ 画像がまだありません');return;}
+  dlImage(pd.imgSrc,'manga_p'+pageNum+'.png');
 }
 
 // ===== 初期化 =====
