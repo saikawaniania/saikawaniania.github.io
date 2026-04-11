@@ -219,6 +219,13 @@ textarea { resize: vertical; min-height: 90px; line-height: 1.6; }
   transition: all .2s;
 }
 .btn-accent:active { opacity: .7; }
+.btn-next {
+  width: 100%; padding: 14px;
+  font-size: 14px; font-weight: 900;
+  border-radius: var(--radius);
+  letter-spacing: .5px;
+  box-shadow: 0 2px 12px var(--theme-glow);
+}
 .btn-success { background: #166534; color: #fff; }
 .btn-danger { background: #7f1d1d; color: #fff; }
 .page-count-selected {
@@ -662,9 +669,9 @@ var CHARS = {
     name: '黒江 悠真',
     attr: '男性, 28歳, 185cm, 新任マネージャー',
     description: '男性, 185cm, 黒髪短髪オールバック, 黒いスーツ（細身）, 白いワイシャツ, 深紅のネクタイ, 黒縁メガネ, 銀色の腕時計',
-    personality: '真面目でプライドが高く、感情を表に出さない。エリート転職組だが不器用。相手の自慢話を真顔で聞き続け、淡々とした一言で空気を終わらせる。',
-    speech: '「……そうですか」「なるほど」「それで？」など短い相槌が多い。感情のこもらない敬語。たまに本音が漏れると辛辣。',
-    traits: '自慢話を聞いても顔色一つ変えない。一言コメントが鋭すぎて相手がしょんぼりする。コーヒーを飲みながら書類を見ていることが多い。',
+    personality: '真面目でプライドが高く、感情を表に出さない。エリート転職組だが不器用。相手の自慢話をひたすら無表情で聞き続けるが、内心ではうんざりしている。ずっと耐えているが、最後の最後だけ限界を迎えてボソッと本音が漏れる。',
+    speech: '「……そうですか」「なるほど」「それで？」など短い相槌が多い。感情のこもらない敬語。ずっと抑えているが、限界を超えると小声で本音がぽろりと出る。',
+    traits: '自慢話を聞いても顔色一つ変えない（ように見える）。眉間にわずかにしわが寄る。コーヒーを飲む頻度が増える。最終ページで初めて感情が出る。',
     imageUrl: SERVER_BASE + '/kuroe.png',
     modePlaceholder: '例：先月、部長に直接褒められました。他の同期とは違うって言われて…',
     modeLabel: '😤 黒江への「自慢話」',
@@ -686,6 +693,8 @@ var LOCATIONS = {
     '社内の自販機コーナー。缶コーヒーと緑茶の自販機が並ぶ。リノリウムの床、蛍光灯。休憩時間の静けさ',
     'ビル1階のコンビニ。昼食時間帯で混み合うレジ前。陳列棚に弁当が並ぶ。ガラス越しに外の陽光',
     'ビルの屋上。フェンス越しに都市の夜景。給水タンクと換気扇の音。夜風が吹く',
+    '木目調のスタバ系モダンカフェ。大きなガラス窓から自然光が差し込む。ラップトップを広げた客が多く、低いBGM。テーブルにはコーヒーカップ',
+    '昔ながらの大衆居酒屋。使い込まれたカウンター席、大将が立つ厨房。壁に手書きのメニュー、頭上に提灯。焼き鳥の煙とざわめき',
   ],
 };
 
@@ -1038,8 +1047,8 @@ function buildUserPrompt(topic,pageNum,prevContext){
     prompt+='【ストーリーモード】悩み相談\n';
     prompt+=userName+'がヴィオレッタに悩みを打ち明ける。ヴィオレッタは高飛車・毒舌・上から目線で分析するが、結果的に的を射た助言をする。\n\n';
   } else {
-    prompt+='【ストーリーモード】自慢話\n';
-    prompt+=userName+'が黒江に自慢話を聞かせる。黒江は無表情・淡々と聞き続け、一言コメントで空気を終わらせる。\n\n';
+    prompt+='【ストーリーモード】自慢話（うんざり黒江）\n';
+    prompt+=userName+'が黒江にしつこく自慢話を聞かせ続ける。黒江はずっと無表情・短い相槌で耐えているが、内心はうんざりしている（表情・仕草・コーヒーを飲む頻度などで表現）。最終ページp.'+pageTotal+'でのみ限界を迎え、ボソッと本音が漏れてオチをつける。p.'+pageTotal+'以外では黒江は感情を出さないこと。\n\n';
   }
 
   prompt+='【お題】\n'+topic+'\n\n';
@@ -1071,7 +1080,7 @@ function lockUI(lock){
   else document.body.classList.remove('is-generating');
 }
 
-// ===== 強制ストップ =====
+// ===== 強制ストップ（逐次フローでは生成中ページのみ中断） =====
 function stopGeneration(){
   if(!isGenerating) return;
   stopRequested = true;
@@ -1081,7 +1090,9 @@ function stopGeneration(){
   showToast('⏹ 停止しています...');
 }
 
-// ===== 生成フロー =====
+// ===== 生成フロー（逐次） =====
+var currentTopic = '';
+
 async function startGeneration(){
   var apiKey=document.getElementById('apiKey').value.trim();
   if(!apiKey){showToast('⚠️ APIキーを入力してください');return;}
@@ -1089,12 +1100,12 @@ async function startGeneration(){
   if(!systemPrompt){showToast('⚠️ システムプロンプトが読み込まれていません');return;}
   var topicCore=document.getElementById('topicText').value.trim();
   if(!topicCore){showToast('⚠️ お題を入力してください');return;}
-  // ユーザーキャラ設定チェック（名前と外見は必須とみなす）
   var userName=document.getElementById('userName').value.trim();
   var userAppearance=document.getElementById('userAppearance').value.trim();
   if(!userName||!userAppearance){showToast('⚠️ あなたのキャラクターを設定してください');return;}
+
   var topicSuffix = selectedMode==='violetta' ? 'の悩み' : 'の自慢';
-  var topic = '「'+topicCore+'」'+topicSuffix;
+  currentTopic = '「'+topicCore+'」'+topicSuffix;
 
   var btn=document.getElementById('startBtn');
   btn.disabled=true; btn.textContent='⏳ 生成中...';
@@ -1104,54 +1115,37 @@ async function startGeneration(){
   setStatus('busy','生成中'); showProgress(true);
   lockUI(true);
 
-  var pagesArea=document.getElementById('pagesArea');
-  for(var i=1;i<=pageTotal;i++){
-    var card=document.createElement('div');
-    card.className='page-card'; card.id='pcard-'+i;
-    card.innerHTML=
-      '<div class="page-header">'+
-      '<div class="page-num">p.'+i+'</div>'+
-      '<div class="page-title">Page '+i+'</div>'+
-      '<div class="page-status" id="ps-'+i+'">待機中</div></div>'+
-      '<div class="page-body" id="pb-'+i+'"><div style="color:var(--text-muted);font-size:12px;text-align:center;padding:20px;">生成待ち...</div></div>';
-    pagesArea.appendChild(card);
-  }
-
-  var doneCount=0;
-  for(var page=1;page<=pageTotal;page++){
-    if(stopRequested){ logMsg('⏹ 停止しました','info'); break; }
-    try{
-      setProgress('📝','Page '+page+' YAML生成中...');
-      setBar(Math.round((page-1)/PAGE_TOTAL*100),false);
-      await generatePage(apiKey,page,topic);
-      doneCount++;
-      setBar(Math.round(page/PAGE_TOTAL*100),false);
-    }catch(e){
-      if(stopRequested){ logMsg('⏹ 停止しました','info'); break; }
-      logMsg('⚠️ Page '+page+' スキップ → 次ページへ','info');
-    }
-  }
-
-  if(stopRequested){
-    setProgress('⏹','停止しました'); setBar(0,false); setStatus('ready','停止');
-  } else if(doneCount>0){
-    setProgress('✅',doneCount+'/'+pageTotal+'ページ完成！');
-    setBar(100,false); setStatus('ready','完了');
-    logMsg('🎉 '+doneCount+'/'+pageTotal+'ページ完成','ok');
-  } else {
-    setProgress('❌','すべてのページが失敗しました');
-    setBar(0,false); setStatus('ready','待機中');
-  }
-  isGenerating=false; stopRequested=false;
-  lockUI(false);
-  btn.disabled=false; btn.textContent='🎨 マンガを生成する';
+  // Page1だけ生成してあとはボタン待ち
+  await generatePage(1);
 }
 
-async function generatePage(apiKey,pageNum,topic){
+// 1ページ分を生成する（YAML→画像）
+async function generatePage(pageNum){
+  var apiKey=document.getElementById('apiKey').value.trim();
+  var pagesArea=document.getElementById('pagesArea');
+
+  // ページカードがなければ作る
+  if(!document.getElementById('pcard-'+pageNum)){
+    var card=document.createElement('div');
+    card.className='page-card'; card.id='pcard-'+pageNum;
+    card.innerHTML=
+      '<div class="page-header">'+
+      '<div class="page-num">p.'+pageNum+'</div>'+
+      '<div class="page-title">Page '+pageNum+' / '+pageTotal+'</div>'+
+      '<div class="page-status" id="ps-'+pageNum+'">生成中...</div></div>'+
+      '<div class="page-body" id="pb-'+pageNum+'"></div>';
+    pagesArea.appendChild(card);
+    card.scrollIntoView({behavior:'smooth',block:'start'});
+  }
+
   var statusEl=document.getElementById('ps-'+pageNum);
   var bodyEl=document.getElementById('pb-'+pageNum);
+
+  // ===== YAML生成 =====
   statusEl.className='page-status'; statusEl.textContent='⏳ YAML生成中...';
   bodyEl.innerHTML='<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:20px;">YAML生成中...</div>';
+  setProgress('📝','Page '+pageNum+' YAML生成中...');
+  setBar(Math.round((pageNum-1)/pageTotal*100),false);
   logMsg('📝 Page '+pageNum+' YAML生成中...','info');
 
   var prevContext='';
@@ -1164,23 +1158,29 @@ async function generatePage(apiKey,pageNum,topic){
     }
   }
 
-  var userPrompt=buildUserPrompt(topic,pageNum,prevContext);
+  var userPrompt=buildUserPrompt(currentTopic,pageNum,prevContext);
   var yamlRaw;
   try{
     yamlRaw=await callText(apiKey,systemPrompt,userPrompt,0.7);
   }catch(e){
     statusEl.className='page-status error'; statusEl.textContent='❌ YAML失敗';
     bodyEl.innerHTML='<div style="color:#f87171;font-size:12px;padding:14px;">❌ YAML生成エラー: '+escHtml(friendlyError(e))+'</div>'+
-      '<div class="page-actions"><button class="btn btn-danger btn-sm" onclick="retryPage('+pageNum+')">🔄 再試行</button></div>';
-    logMsg('❌ Page '+pageNum+' YAML失敗: '+friendlyError(e),'err'); throw e;
+      '<div class="page-actions">'+
+      '<button class="btn btn-danger btn-sm" onclick="retryPage('+pageNum+')">🔄 再試行</button>'+
+      (pageNum<pageTotal?'<button class="btn btn-sm" onclick="goNextPage('+pageNum+')">⏭ スキップして次へ</button>':'')+
+      '</div>';
+    logMsg('❌ Page '+pageNum+' YAML失敗: '+friendlyError(e),'err');
+    isGenerating=false; lockUI(false);
+    return;
   }
   pageYamls[pageNum-1]=yamlRaw;
   logMsg('✅ Page '+pageNum+' YAML完成','ok');
 
+  // ===== 画像生成 =====
   statusEl.textContent='⏳ 画像生成中...';
   bodyEl.innerHTML='<div style="color:var(--theme-a);font-size:12px;text-align:center;padding:20px;">🎨 画像生成中...</div>';
-  logMsg('🎨 Page '+pageNum+' 画像生成中...','info');
   setProgress('🎨','Page '+pageNum+' 画像生成中...');
+  logMsg('🎨 Page '+pageNum+' 画像生成中...','info');
 
   try{
     var preprocessed=preprocessYaml(yamlRaw);
@@ -1203,34 +1203,78 @@ async function generatePage(apiKey,pageNum,topic){
     var imgSrc='data:'+images[images.length-1].inlineData.mimeType+';base64,'+images[images.length-1].inlineData.data;
     pageData[pageNum-1]={imgSrc:imgSrc};
 
+    var isLast=(pageNum>=pageTotal);
+    var nextBtn=isLast
+      ? '<button class="btn btn-primary" onclick="showFinished()" style="margin-top:4px;">🎉 完成！</button>'
+      : '<button class="btn btn-accent btn-next" onclick="goNextPage('+pageNum+')">次のページへ → p.'+(pageNum+1)+'</button>';
+
     bodyEl.innerHTML='<div class="page-img-wrap"><img src="'+imgSrc+'" alt="Page '+pageNum+'"></div>'+
       '<div class="page-actions">'+
       '<button class="btn btn-success btn-sm" onclick="dlPageImage('+pageNum+')">⬇️ 画像保存</button>'+
-      '<button class="btn btn-sm" onclick="retryPageImgOnly('+pageNum+')" id="retry-'+pageNum+'">🔄 再生成</button>'+
-      '</div>';
+      '<button class="btn btn-sm" onclick="retryPageImgOnly('+pageNum+')">🔄 再生成</button>'+
+      '</div>'+
+      '<div style="margin-top:10px;">'+nextBtn+'</div>';
     statusEl.className='page-status done'; statusEl.textContent='✅ 完成';
+    setBar(Math.round(pageNum/pageTotal*100),false);
     logMsg('✅ Page '+pageNum+' 完成','ok');
+
+    if(isLast){
+      setProgress('✅',pageTotal+'/'+pageTotal+'ページ完成！');
+      setStatus('ready','完了');
+    } else {
+      setProgress('✅','p.'+pageNum+' 完成 — 次へボタンを押してください');
+      setStatus('ready','待機中');
+    }
   }catch(e){
     statusEl.className='page-status error'; statusEl.textContent='❌ 画像失敗';
     bodyEl.innerHTML='<div style="color:#f87171;font-size:12px;text-align:center;padding:14px;">❌ '+escHtml(friendlyError(e))+'</div>'+
       '<div class="page-actions">'+
       '<button class="btn btn-danger btn-sm" onclick="retryPageImgOnly('+pageNum+')">🔄 画像のみ再試行</button>'+
       '<button class="btn btn-sm" onclick="retryPage('+pageNum+')">🔄 最初から再試行</button>'+
+      (pageNum<pageTotal?'<button class="btn btn-sm" onclick="goNextPage('+pageNum+')">⏭ スキップして次へ</button>':'')+
       '</div>';
-    logMsg('❌ Page '+pageNum+' 画像失敗: '+friendlyError(e),'err'); throw e;
+    logMsg('❌ Page '+pageNum+' 画像失敗: '+friendlyError(e),'err');
+    setProgress('❌','p.'+pageNum+' 失敗');
+    setStatus('ready','待機中');
   }
+
+  isGenerating=false;
+  lockUI(false);
 }
 
+// 次ページへ進む（ボタンから呼ばれる）
+async function goNextPage(pageNum){
+  var nextPage=pageNum+1;
+  if(nextPage>pageTotal) return;
+  isGenerating=true; stopRequested=false; activeAbortControllers=[];
+  setStatus('busy','生成中');
+  lockUI(true);
+  // 「次へ」ボタン自体をロック
+  var nextBtns=document.querySelectorAll('.btn-next');
+  nextBtns.forEach(function(b){b.disabled=true;b.textContent='⏳ 生成中...';});
+  await generatePage(nextPage);
+}
+
+// 全ページ完成表示
+function showFinished(){
+  var btn=document.getElementById('startBtn');
+  btn.disabled=false; btn.textContent='🎨 マンガを生成する';
+  showToast('🎉 全'+pageTotal+'ページ完成！');
+  setProgress('🎉','全'+pageTotal+'ページ完成！');
+}
+
+// 画像のみ再生成
 async function retryPageImgOnly(pageNum){
-  if(isGenerating){showToast('⏳ 最終ページ終了後に再試行できます');return;}
+  if(isGenerating){showToast('⏳ 生成中です。しばらくお待ちください');return;}
   if(isRetrying) return;
-  if(!pageYamls[pageNum-1]){retryPage(pageNum);return;}
+  if(!pageYamls[pageNum-1]){await retryPage(pageNum);return;}
   var apiKey=document.getElementById('apiKey').value.trim();
   if(!apiKey){showToast('⚠️ APIキーを入力してください');return;}
   isRetrying=true;
   var statusEl=document.getElementById('ps-'+pageNum);
   var bodyEl=document.getElementById('pb-'+pageNum);
   statusEl.className='page-status'; statusEl.textContent='⏳ 画像再生成中...';
+  bodyEl.innerHTML='<div style="color:var(--theme-a);font-size:12px;text-align:center;padding:20px;">🎨 画像再生成中...</div>';
   logMsg('🎨 Page '+pageNum+' 画像のみ再生成...','info');
   try{
     var preprocessed=preprocessYaml(pageYamls[pageNum-1]);
@@ -1245,40 +1289,53 @@ async function retryPageImgOnly(pageNum){
       var blob=new Blob([arr],{type:'image/png'});
       layoutFile=new File([blob],'layout_'+layoutName+'.png',{type:'image/png'});
     }
+    var apiKey2=document.getElementById('apiKey').value.trim();
     var charImg=charImages[selectedMode]||null;
     var refs=layoutFile?[layoutFile]:[];
-    var imgParts=await callImageWithRefs(apiKey,preprocessed.promptForImage,charImg,refs);
+    var imgParts=await callImageWithRefs(apiKey2,preprocessed.promptForImage,charImg,refs);
     var images=imgParts.filter(function(p){return p.inlineData&&/^image\//.test(p.inlineData.mimeType);});
     if(!images.length) throw new Error('画像が返ってきませんでした');
     var imgSrc='data:'+images[images.length-1].inlineData.mimeType+';base64,'+images[images.length-1].inlineData.data;
     pageData[pageNum-1]={imgSrc:imgSrc};
+
+    var isLast=(pageNum>=pageTotal);
+    var nextBtn=isLast
+      ? '<button class="btn btn-primary" onclick="showFinished()" style="margin-top:4px;">🎉 完成！</button>'
+      : '<button class="btn btn-accent btn-next" onclick="goNextPage('+pageNum+')">次のページへ → p.'+(pageNum+1)+'</button>';
+
     bodyEl.innerHTML='<div class="page-img-wrap"><img src="'+imgSrc+'" alt="Page '+pageNum+'"></div>'+
       '<div class="page-actions">'+
       '<button class="btn btn-success btn-sm" onclick="dlPageImage('+pageNum+')">⬇️ 画像保存</button>'+
-      '<button class="btn btn-sm" onclick="retryPageImgOnly('+pageNum+')" id="retry-'+pageNum+'">🔄 再生成</button>'+
-      '</div>';
+      '<button class="btn btn-sm" onclick="retryPageImgOnly('+pageNum+')">🔄 再生成</button>'+
+      '</div>'+
+      '<div style="margin-top:10px;">'+nextBtn+'</div>';
     statusEl.className='page-status done'; statusEl.textContent='✅ 完成';
     logMsg('✅ Page '+pageNum+' 再生成完成','ok');
   }catch(e){
     statusEl.className='page-status error'; statusEl.textContent='❌ 失敗';
+    bodyEl.innerHTML='<div style="color:#f87171;font-size:12px;padding:14px;">❌ '+escHtml(friendlyError(e))+'</div>'+
+      '<div class="page-actions">'+
+      '<button class="btn btn-danger btn-sm" onclick="retryPageImgOnly('+pageNum+')">🔄 画像のみ再試行</button>'+
+      '<button class="btn btn-sm" onclick="retryPage('+pageNum+')">🔄 最初から再試行</button>'+
+      (pageNum<pageTotal?'<button class="btn btn-sm" onclick="goNextPage('+pageNum+')">⏭ スキップして次へ</button>':'')+
+      '</div>';
     logMsg('❌ Page '+pageNum+' 再生成失敗: '+friendlyError(e),'err');
   }finally{
     isRetrying=false;
   }
 }
 
+// YAMLから最初から再試行
 async function retryPage(pageNum){
-  if(isGenerating){showToast('⏳ 最終ページ終了後に再試行できます');return;}
+  if(isGenerating){showToast('⏳ 生成中です。しばらくお待ちください');return;}
   if(isRetrying) return;
   var apiKey=document.getElementById('apiKey').value.trim();
   if(!apiKey){showToast('⚠️ APIキーを入力してください');return;}
   isRetrying=true;
+  pageYamls[pageNum-1]=null;
   try{
-    var topicCore=document.getElementById('topicText').value.trim();
-    var topicSuffix2 = selectedMode==='violetta' ? 'の悩み' : 'の自慢';
-    var topic = '「'+topicCore+'」'+topicSuffix2;
-    pageYamls[pageNum-1]=null;
-    await generatePage(apiKey,pageNum,topic);
+    isGenerating=true; lockUI(true);
+    await generatePage(pageNum);
   }catch(e){
     logMsg('❌ Page '+pageNum+' 再試行失敗: '+friendlyError(e),'err');
   }finally{
