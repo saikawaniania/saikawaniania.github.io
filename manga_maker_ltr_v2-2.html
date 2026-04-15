@@ -1,0 +1,1406 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>🎭 相談・自慢マンガメーカー（左→右）</title>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-XXXXXXXXXX');
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Kaisei+Decol:wght@400;700&family=M+PLUS+Rounded+1c:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* ===== CSS変数（テーマ） ===== */
+:root {
+  --bg: #0f0e14;
+  --surface: #1a1825;
+  --surface2: #221f30;
+  --surface3: #2a2740;
+  --border: #3a3650;
+  --text: #f0eaff;
+  --text-muted: #c8c4d8;
+  --accent: #c9a84c;
+  --radius: 16px;
+  --radius-sm: 10px;
+  /* デフォルト（未選択）*/
+  --theme-a: #c9a84c;
+  --theme-b: #8b5cf6;
+  --theme-glow: rgba(201,168,76,0.3);
+  --theme-bg: rgba(201,168,76,0.07);
+  --theme-border: rgba(201,168,76,0.3);
+  --btn-primary: linear-gradient(135deg,#c9a84c,#e8c96a);
+  --btn-text: #0f0e14;
+}
+
+/* ヴィオレッタテーマ */
+body.theme-violetta {
+  --theme-a: #c084fc;
+  --theme-b: #f43f5e;
+  --theme-glow: rgba(192,132,252,0.35);
+  --theme-bg: rgba(192,132,252,0.08);
+  --theme-border: rgba(192,132,252,0.35);
+  --btn-primary: linear-gradient(135deg,#9333ea,#ec4899);
+  --btn-text: #fff;
+  --bg: #0e0b14;
+  --surface: #170f22;
+  --surface2: #1e1430;
+  --surface3: #26193d;
+  --border: #3d2860;
+}
+
+/* 黒江テーマ */
+body.theme-kuroe {
+  --theme-a: #60a5fa;
+  --theme-b: #38bdf8;
+  --theme-glow: rgba(96,165,250,0.3);
+  --theme-bg: rgba(96,165,250,0.07);
+  --theme-border: rgba(96,165,250,0.3);
+  --btn-primary: linear-gradient(135deg,#1d4ed8,#0ea5e9);
+  --btn-text: #fff;
+  --bg: #080c14;
+  --surface: #0d1422;
+  --surface2: #101a2e;
+  --surface3: #172338;
+  --border: #1e3a5f;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'M PLUS Rounded 1c', sans-serif;
+  min-height: 100dvh;
+  transition: background .5s, color .3s;
+}
+
+/* 背景ノイズ装飾 */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    radial-gradient(ellipse 60% 40% at 20% 10%, var(--theme-glow) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 30% at 80% 85%, rgba(var(--theme-b-rgb,139,92,246),0.15) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+  transition: all .6s;
+}
+
+/* ===== ヘッダー ===== */
+header {
+  position: sticky; top: 0; z-index: 200;
+  background: rgba(15,14,20,.85);
+  backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid var(--border);
+  padding: 0 18px; height: 56px;
+  display: flex; align-items: center; gap: 12px;
+  transition: background .5s, border-color .5s;
+}
+.logo {
+  font-family: 'Kaisei Decol', serif;
+  font-size: 13px; font-weight: 700;
+  background: linear-gradient(90deg, var(--theme-a), var(--theme-b));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  transition: all .5s;
+}
+.status-badge {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 14px; color: var(--text-muted);
+  font-family: 'Space Mono', monospace; margin-left: auto;
+}
+.sdot { width: 8px; height: 8px; border-radius: 50%; background: #555; }
+.sdot.ready { background: #4ade80; box-shadow: 0 0 8px #4ade80; }
+.sdot.busy { background: var(--theme-a); box-shadow: 0 0 8px var(--theme-a); animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* ===== レイアウト ===== */
+main {
+  position: relative; z-index: 1;
+  max-width: 620px; margin: 0 auto;
+  padding: 20px 16px;
+  display: flex; flex-direction: column; gap: 16px;
+}
+
+/* ===== カード ===== */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  transition: background .5s, border-color .5s;
+  position: relative;
+  overflow: hidden;
+}
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--theme-a), var(--theme-b));
+  opacity: 0;
+  transition: opacity .4s;
+}
+.card:focus-within::before { opacity: 1; }
+
+.card-label {
+  font-size: 13px;
+  font-family: 'Space Mono', monospace;
+  color: var(--theme-a);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 12px;
+  transition: color .5s;
+}
+
+/* ===== 入力 ===== */
+input[type="password"], input[type="text"], textarea {
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: 'M PLUS Rounded 1c', sans-serif;
+  font-size: 13px;
+  padding: 10px 13px;
+  width: 100%;
+  outline: none;
+  transition: border-color .2s, background .5s;
+  -webkit-appearance: none;
+}
+input:focus, textarea:focus {
+  border-color: var(--theme-a);
+  box-shadow: 0 0 0 3px var(--theme-bg);
+}
+textarea { resize: vertical; min-height: 90px; line-height: 1.6; }
+.field { margin-bottom: 10px; }
+.field-label { font-size: 13px; color: var(--text-muted); margin-bottom: 5px; display: block; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* ===== ボタン ===== */
+.btn {
+  border: none; border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-family: 'M PLUS Rounded 1c', sans-serif;
+  font-weight: 700; font-size: 13px;
+  padding: 10px 16px;
+  transition: all .15s;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-primary {
+  background: var(--btn-primary);
+  color: var(--btn-text);
+  width: 100%; padding: 16px;
+  font-size: 13px;
+  border-radius: var(--radius);
+  letter-spacing: .5px;
+  box-shadow: 0 4px 20px var(--theme-glow);
+  transition: all .3s;
+}
+.btn-primary:active { transform: scale(.97); opacity: .9; }
+.btn-primary:disabled { opacity: .35; cursor: not-allowed; transform: none; box-shadow: none; }
+.btn-sm {
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 7px 13px; font-size: 13px;
+}
+.btn-sm:active { background: var(--surface3); }
+.btn-sm:disabled { opacity: .4; cursor: not-allowed; }
+.btn-accent {
+  background: var(--theme-bg);
+  color: var(--theme-a);
+  border: 1px solid var(--theme-border);
+  padding: 7px 13px; font-size: 13px;
+  transition: all .2s;
+}
+.btn-accent:active { opacity: .7; }
+.btn-next {
+  width: 100%; padding: 14px;
+  font-size: 14px; font-weight: 900;
+  border-radius: var(--radius);
+  letter-spacing: .5px;
+  box-shadow: 0 2px 12px var(--theme-glow);
+}
+.btn-success { background: #166534; color: #fff; }
+.btn-danger { background: #7f1d1d; color: #fff; }
+.page-count-selected {
+  background: var(--theme-bg) !important;
+  color: var(--theme-a) !important;
+  border-color: var(--theme-border) !important;
+}
+
+/* ===== モード選択 ===== */
+.mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.mode-card {
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 14px;
+  cursor: pointer;
+  transition: all .3s;
+  text-align: center;
+  -webkit-tap-highlight-color: transparent;
+  background: var(--surface2);
+  position: relative;
+  overflow: hidden;
+}
+.mode-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--theme-bg);
+  opacity: 0;
+  transition: opacity .3s;
+}
+.mode-card:active { transform: scale(.97); }
+
+.mode-card.active-violetta {
+  border-color: #c084fc;
+  background: rgba(192,132,252,.1);
+  box-shadow: 0 0 24px rgba(192,132,252,.2), inset 0 1px 0 rgba(192,132,252,.2);
+}
+.mode-card.active-kuroe {
+  border-color: #60a5fa;
+  background: rgba(96,165,250,.1);
+  box-shadow: 0 0 24px rgba(96,165,250,.2), inset 0 1px 0 rgba(96,165,250,.2);
+}
+.mode-icon {
+  font-size: 38px; margin-bottom: 8px;
+  filter: drop-shadow(0 2px 8px var(--theme-glow));
+  transition: filter .5s;
+}
+.mode-name { font-size: 13px; font-weight: 900; margin-bottom: 4px; }
+.mode-name-violetta { color: #c084fc; }
+.mode-name-kuroe { color: #60a5fa; }
+.mode-desc { font-size: 14px; color: var(--text-muted); line-height: 1.6; }
+
+/* ===== キャラプレビュー ===== */
+.chara-preview {
+  display: none;
+  margin-top: 14px;
+  border: 1px solid var(--theme-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  animation: slideDown .3s ease;
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.chara-preview.show { display: block; }
+.chara-preview-header {
+  padding: 12px 15px;
+  background: var(--theme-bg);
+}
+.chara-preview-name { font-size: 14px; font-weight: 900; color: var(--theme-a); transition: color .5s; }
+.chara-preview-attr { font-size: 14px; color: var(--text-muted); margin-top: 2px; }
+.chara-preview-body { padding: 12px 15px; font-size: 13px; color: var(--text-muted); line-height: 1.9; }
+.chara-tag {
+  display: inline-block;
+  background: var(--theme-bg);
+  border: 1px solid var(--theme-border);
+  color: var(--theme-a);
+  border-radius: 100px;
+  padding: 2px 10px; margin: 2px;
+  font-size: 14px; font-weight: 700;
+  transition: all .5s;
+}
+
+/* ===== ユーザーキャラ画像 ===== */
+.user-img-area {
+  display: flex; align-items: flex-start; gap: 12px;
+  margin-bottom: 12px;
+}
+.user-img-thumb {
+  width: 80px; height: 80px;
+  border-radius: var(--radius-sm);
+  border: 2px dashed var(--border);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0;
+  transition: all .2s; overflow: hidden;
+  background: var(--surface2);
+  position: relative;
+}
+.user-img-thumb:hover { border-color: var(--theme-a); }
+.user-img-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.user-img-thumb .thumb-placeholder { font-size: 28px; color: var(--text-muted); }
+.user-img-thumb .thumb-overlay {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,.6);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; opacity: 0; transition: opacity .2s;
+}
+.user-img-thumb:hover .thumb-overlay { opacity: 1; }
+.user-img-controls { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+.user-img-hint { font-size: 14px; color: var(--text-muted); line-height: 1.5; }
+
+/* ===== プログレス ===== */
+.progress-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden; display: none;
+  transition: background .5s, border-color .5s;
+}
+.progress-section.active { display: block; }
+.progress-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px; cursor: pointer;
+}
+.progress-label { font-size: 14px; font-weight: 700; flex: 1; }
+.mini-bar { height: 3px; background: var(--surface3); }
+.mini-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--theme-a), var(--theme-b));
+  transition: width .4s;
+}
+.mini-bar-fill.ind {
+  animation: indeterminate 1.2s infinite linear;
+  width: 35% !important;
+}
+@keyframes indeterminate {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+.log-body { max-height: 0; overflow: hidden; transition: max-height .3s; }
+.progress-section.open .log-body { max-height: 180px; overflow-y: auto; }
+.log-line { display: flex; gap: 8px; padding: 3px 16px; font-size: 14px; font-family: 'Space Mono', monospace; }
+.log-ts { color: var(--text-muted); flex-shrink: 0; }
+.log-msg { color: var(--text); }
+.log-line.ok .log-msg { color: #4ade80; }
+.log-line.err .log-msg { color: #f87171; }
+.log-line.info .log-msg { color: var(--theme-a); }
+
+/* ===== ページカード ===== */
+.page-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: background .5s, border-color .5s;
+}
+.page-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 16px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+}
+.page-num {
+  font-family: 'Space Mono', monospace;
+  font-size: 13px; color: var(--theme-a); font-weight: 700;
+  transition: color .5s;
+}
+.page-title { flex: 1; font-size: 14px; font-weight: 700; }
+.page-status { font-size: 14px; color: var(--text-muted); font-family: 'Space Mono', monospace; }
+.page-status.done { color: #4ade80; }
+.page-status.error { color: #f87171; }
+.page-body { padding: 14px; }
+.page-img-wrap img { width: 100%; border-radius: var(--radius-sm); display: block; }
+.page-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+
+/* ===== ロードオーバーレイ ===== */
+.load-overlay {
+  position: fixed; inset: 0;
+  background: rgba(10,8,16,.9);
+  display: none; flex-direction: column;
+  align-items: center; justify-content: center; z-index: 9000;
+}
+.load-overlay.show { display: flex; }
+.load-spinner {
+  width: 40px; height: 40px;
+  border: 3px solid var(--border);
+  border-top-color: var(--theme-a);
+  border-radius: 50%;
+  animation: spin .8s linear infinite; margin-bottom: 14px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.load-text { font-size: 14px; color: var(--text-muted); }
+
+/* ===== トースト ===== */
+.toast {
+  position: fixed; bottom: 24px; left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--surface3);
+  border: 1px solid var(--theme-border);
+  border-radius: 100px;
+  padding: 10px 20px;
+  font-size: 14px; font-weight: 700;
+  opacity: 0; transition: all .3s;
+  z-index: 9999; white-space: nowrap;
+  box-shadow: 0 8px 24px rgba(0,0,0,.4);
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ===== ストップボタン ===== */
+.btn-stop {
+  border: 1.5px solid #f87171;
+  background: rgba(248,113,113,.15);
+  color: #f87171;
+  border-radius: 100px;
+  padding: 5px 14px;
+  font-size: 13px; font-weight: 700;
+  cursor: pointer;
+  font-family: 'M PLUS Rounded 1c', sans-serif;
+  transition: all .2s;
+  margin-left: auto; margin-right: 8px;
+}
+.btn-stop:active { background: rgba(248,113,113,.3); }
+
+/* 生成中ロック */
+.ui-locked { pointer-events: none; opacity: .45; transition: opacity .3s; }
+
+/* 生成中の再試行ボタン */
+body.is-generating .btn-danger,
+body.is-generating .page-actions .btn-sm {
+  opacity: .38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* 再試行ボタン押下フィードバック */
+.btn-danger:active { transform: scale(.93); filter: brightness(1.2); }
+.btn-sm:not(:disabled):active { transform: scale(.93); background: var(--surface3); }
+
+/* ===== エラー表示 ===== */
+.init-error {
+  background: rgba(127,29,29,.2);
+  border: 1px solid rgba(248,113,113,.3);
+  border-radius: var(--radius-sm);
+  padding: 13px; font-size: 14px;
+  color: #fca5a5; display: none; white-space: pre-line;
+}
+
+/* ===== section見出し ===== */
+.section-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--theme-bg);
+  border: 1px solid var(--theme-border);
+  border-radius: 100px;
+  padding: 4px 12px;
+  font-size: 14px; font-weight: 700;
+  color: var(--theme-a);
+  margin-bottom: 14px;
+  transition: all .5s;
+}
+</style>
+</head>
+<body>
+
+<div class="load-overlay" id="loadOverlay">
+  <div class="load-spinner"></div>
+  <div class="load-text" id="loadText">準備中...</div>
+</div>
+
+<header>
+  <div class="logo">🎭 相談・自慢マンガメーカー（左→右）</div>
+  <button class="btn-stop" id="stopBtn" onclick="stopGeneration()" style="display:none;">⏹ 停止</button>
+  <div class="status-badge">
+    <div class="sdot" id="statusDot"></div>
+    <span id="statusText">初期化中</span>
+  </div>
+</header>
+
+<main>
+  <div class="init-error" id="initError"></div>
+
+  <!-- APIキー -->
+  <div class="card">
+    <div class="card-label">🔑 Gemini API Key</div>
+    <input type="password" id="apiKey" placeholder="AIza..." autocomplete="off">
+  </div>
+
+  <!-- モード選択 -->
+  <div class="card">
+    <div class="card-label">🎭 キャラクター選択</div>
+    <div class="mode-grid">
+      <div class="mode-card" id="modeVioletta" onclick="selectMode('violetta')">
+        <div class="mode-icon">🌹</div>
+        <div class="mode-name mode-name-violetta">ヴィオレッタ</div>
+        <div class="mode-desc">悪役令嬢に<br>「悩み相談」する</div>
+      </div>
+      <div class="mode-card" id="modeKuroe" onclick="selectMode('kuroe')">
+        <div class="mode-icon">💼</div>
+        <div class="mode-name mode-name-kuroe">黒江 悠真</div>
+        <div class="mode-desc">サラリーマンに<br>「自慢話」をする</div>
+      </div>
+    </div>
+
+    <div class="chara-preview" id="previewVioletta">
+      <div class="chara-preview-header">
+        <div class="chara-preview-name">ヴィオレッタ・ド・ノクテルム</div>
+        <div class="chara-preview-attr">女性 / 163cm / 闇魔法を操る悪役令嬢</div>
+      </div>
+      <div class="chara-preview-body">
+        <span class="chara-tag">高飛車</span><span class="chara-tag">毒舌</span>
+        <span class="chara-tag">実は的確</span><span class="chara-tag">野望</span><br><br>
+        「悩み？ふふ、聞いてあげましょうか」<br>——上から目線だが、なぜか助けになる
+      </div>
+    </div>
+    <div class="chara-preview" id="previewKuroe">
+      <div class="chara-preview-header">
+        <div class="chara-preview-name">黒江 悠真（くろえ ゆうま）</div>
+        <div class="chara-preview-attr">男性 / 28歳 / 185cm / 新任マネージャー</div>
+      </div>
+      <div class="chara-preview-body">
+        <span class="chara-tag">真面目</span><span class="chara-tag">プライド高め</span>
+        <span class="chara-tag">不器用</span><span class="chara-tag">エリート</span><br><br>
+        「……そうですか」（無表情）<br>——自慢話を真顔で聞き続けるリーマン
+      </div>
+    </div>
+  </div>
+
+  <!-- ユーザーキャラ -->
+  <div class="card">
+    <div class="card-label">👤 あなたのキャラクター</div>
+
+    <div class="user-img-area">
+      <div class="user-img-thumb" onclick="document.getElementById('userImgInput').click()">
+        <div class="thumb-placeholder" id="thumbPlaceholder">🧑</div>
+        <img id="userImgPreview" style="display:none;">
+        <div class="thumb-overlay">📷</div>
+      </div>
+      <div class="user-img-controls">
+        <div class="user-img-hint">キャラクター参照画像をアップロードできます。<br>画像から外見を自動読み取りすることもできます。</div>
+        <button class="btn btn-accent" id="analyzeBtn" onclick="analyzeUserImage()" disabled>🤖 AIで外見を読み取る</button>
+        <button class="btn btn-sm" onclick="clearUserImage()" id="clearImgBtn" style="display:none;">✕ 画像を削除</button>
+      </div>
+    </div>
+    <input type="file" id="userImgInput" accept="image/*" style="display:none;" onchange="onUserImageSelect(this)">
+
+    <div class="row2">
+      <div class="field">
+        <label class="field-label">名前</label>
+        <input type="text" id="userName" placeholder="例：田中 花子">
+      </div>
+      <div class="field">
+        <label class="field-label">性別・年齢など</label>
+        <input type="text" id="userAttr" placeholder="例：女性・25歳">
+      </div>
+    </div>
+    <div class="field">
+      <label class="field-label">外見・服装 <span style="color:var(--text-muted);font-weight:400;">（全ページ固定）</span></label>
+      <input type="text" id="userAppearance" placeholder="例：155cm, 黒髪ボブ, 白いTシャツ, デニムパンツ, 黄色いトートバッグ">
+    </div>
+    <div class="field">
+      <label class="field-label">口調・性格 <span style="color:var(--text-muted);font-weight:400;">（任意）</span></label>
+      <input type="text" id="userSpeech" placeholder="例：明るくポジティブ。語尾に「！」が多い">
+    </div>
+  </div>
+
+  <!-- お題 -->
+  <div class="card">
+    <div class="card-label" id="topicLabel">📝 お題</div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span id="topicPrefix" style="font-size:14px;font-weight:700;color:var(--theme-a);white-space:nowrap;flex-shrink:0;transition:color .5s;">「</span>
+      <input type="text" id="topicText" maxlength="20" placeholder="まずキャラクターを選択してください" style="flex:1;">
+      <span id="topicSuffix" style="font-size:14px;font-weight:700;color:var(--theme-a);white-space:nowrap;flex-shrink:0;transition:color .5s;">」</span>
+    </div>
+    <div style="font-size:10px;color:var(--text-muted);margin-top:6px;text-align:right;" id="topicCounter">0/20文字</div>
+  </div>
+
+  <!-- ページ数 -->
+  <div class="card">
+    <div class="card-label">📄 ページ数</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-sm page-count-btn" data-n="1" onclick="selectPageCount(1)">1p</button>
+      <button class="btn btn-sm page-count-btn" data-n="2" onclick="selectPageCount(2)">2p</button>
+      <button class="btn btn-sm page-count-btn" data-n="3" onclick="selectPageCount(3)">3p</button>
+      <button class="btn btn-sm page-count-btn page-count-selected" data-n="4" onclick="selectPageCount(4)">4p ★</button>
+    </div>
+    <div style="font-size:10px;color:var(--text-muted);margin-top:8px;">★推奨。ページ数が多いほど生成時間が長くなります。</div>
+  </div>
+
+  <!-- 生成ボタン -->
+  <button class="btn btn-primary" id="startBtn" onclick="startGeneration()" disabled>
+    🎨 マンガを生成する
+  </button>
+
+  <!-- プログレス -->
+  <div class="progress-section" id="progressSection">
+    <div class="progress-header" onclick="toggleLog()">
+      <span id="progressIcon">⏳</span>
+      <span class="progress-label" id="progressLabel">処理中...</span>
+      <span style="font-size:10px;color:var(--text-muted);">▼</span>
+    </div>
+    <div class="mini-bar"><div class="mini-bar-fill" id="miniBar"></div></div>
+    <div class="log-body" id="log"></div>
+  </div>
+
+  <!-- ページ一覧 -->
+  <div id="pagesArea"></div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<footer style="text-align:center;padding:24px 16px;font-size:10px;color:var(--text-muted);font-family:'Space Mono',monospace;border-top:1px solid var(--border);margin-top:8px;">
+  <a href="https://note.com/vast_lily4547/n/n2bd1fee29e3f" target="_blank" rel="noopener" style="display:block;text-decoration:none;margin-bottom:18px;">
+    <div style="position:relative;border-radius:12px;overflow:hidden;box-shadow:0 0 0 2px var(--theme-a);transition:box-shadow .3s;" onmouseenter="this.style.boxShadow='0 0 18px 4px var(--theme-a)'" onmouseleave="this.style.boxShadow='0 0 0 2px var(--theme-a)'">
+      <img src="https://saikawaniania.github.io/conversational_manga_banner.png" alt="会話漫画プロンプト自動生成システム" style="width:100%;display:block;border-radius:12px;">
+      <div style="position:absolute;bottom:0;left:0;right:0;padding:10px 14px;background:linear-gradient(transparent,rgba(0,0,0,.7));border-radius:0 0 12px 12px;">
+        <div style="font-size:13px;font-weight:700;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.8);">✨ もっと自由に漫画を作りたいあなたには！</div>
+      </div>
+    </div>
+  </a>
+  © 2026 saikawania — 個人利用のみ可。改変・再配布・商用利用禁止。
+</footer>
+
+<script>
+// ===== 設定 =====
+var SERVER_BASE = 'https://saikawaniania.github.io';
+var SYSTEM_PROMPT_URL = null; // 内蔵プロンプト使用
+var _SP = 'PHJvbGU+CuOAkOa8q+eUu1lBTUzoh6rli5XnlJ/miJDjgrfjgrnjg4bjg6Ag4oCUIOWvvuipseeJueWMlueJiOOAkQrjg6bjg7zjgrbjg7zjgYvjgonjgIzmgqnjgb/nm7joq4fjgI3jgb7jgZ/jga/jgIzoh6rmhaLoqbHjgI3jga7jgYrpoYzjgpLlj5fjgZHlj5bjgorjgIHlm7rlrprjgq3jg6Pjg6njgq/jgr/jg7zjgajjg6bjg7zjgrbjg7zjgq3jg6Pjg6njgq/jgr/jg7zjgYzkvJroqbHjgZnjgovmvKvnlLtZQU1M44KS55Sf5oiQ44GX44G+44GZ44CCCua8lOWHuuOBr+OAjOOCq+ODqeODvOaomea6luOAjea8lOWHuuOCu+ODg+ODiOOCkuS9v+eUqOOBl+OBvuOBmeOAggrjgqLjgrnjg5rjgq/jg4jmr5Tjga8xOjEuNuWbuuWumuOBp+OBmeOAggrmp4vmiJDmoYjjga7norroqo3jgrnjg4bjg4Pjg5fjga/kuI3opoHjgafjgZnjgILjgYrpoYzjgpLlj5fjgZHlj5bjgaPjgZ/jgonnm7TmjqVZQU1M44KS55Sf5oiQ44GX44Gm44GP44Gg44GV44GE44CCCjwvcm9sZT4KCjxyZWFkaW5nX29yZGVyPgrlt6bjgYvjgonlj7Pjgavoqq3jgoDjgIIKPC9yZWFkaW5nX29yZGVyPgoKPHdvcmtmbG93Pgrjg6bjg7zjgrbjg7zjgYvjgonjgYrpoYzvvIjmgqnjgb/jg7voh6rmhaLvvInjgpLlj5fjgZHlj5bjgaPjgZ/loLTlkIjvvJoKMS4g44GK6aGM44GL44KJ44Oe44Oz44Ks5pig44GI44GZ44KL44OJ44Op44Oe44KS6ICD44GI44KLCjIuIOWFqOODmuODvOOCuOOBruOCueODiOODvOODquODvOani+aIkOOCkuWGhemDqOOBp+eri+ahiOOBmeOCi++8iOWHuuWKm+OBl+OBquOBhO+8iQozLiDnq4vjgaHkvY3nva7vvIjlt6bjg7vlj7PvvInjgpLlkITjgq3jg6Pjg6njgavlibLjgorlvZPjgabjgovvvIjlhajjg5rjg7zjgrjlm7rlrprvvIkKNC4gMeODmuODvOOCuOOBmuOBpFlBTUzjgpLlh7rlipvjgZnjgosKCuOCueODiOODvOODquODvOOBruaWueWQkeaAp++8mgotIOaCqeOBv+ebuOirh+ODouODvOODie+8muWbuuWumuOCreODo+ODqeOBjOmrmOmjm+i7iuODu+avkuiIjOODu+S4iuOBi+OCieebrue3muOBp+OCouODieODkOOCpOOCueOBmeOCi+OBjOOAgee1kOaenOeahOOBq+eahOOCkuWwhOOBn+OBk+OBqOOCkuiogOOBhuOAguODpuODvOOCtuODvOOCreODo+ODqeOBjOaMr+OCiuWbnuOBleOCjOOCi+WKh+OAggotIOiHquaFouipseODouODvOODie+8muWbuuWumuOCreODo+ODqeOBjOeEoeihqOaDheODu+i+m+WPo+ODu+WGt+mdmeOBq+ODquOCouOCr+OCt+ODp+ODs+OBl+OAgeiHquaFouOBjOepuuWbnuOCiuOBmeOCi+OAguODpuODvOOCtuODvOOCreODo+ODqeOBruiHquaFouOBjOOBqeOCk+OBqeOCk+mcnuOCk+OBp+OBhOOBj+WKh+OAggoK44Oa44O844K45qeL5oiQ44Gu5Y6f5YmH77yINOODmuODvOOCuOOBruWgtOWQiO+8ie+8mgotIHAuMe+8mueKtuazgeiqrOaYjuODu+OCreODo+ODqeeZu+WgtOODu+OBiumhjOOBruaPkOekugotIHAuMu+8muWbuuWumuOCreODo+ODqeOBruWPjeW/nOODu+WxlemWiwotIHAuM++8muOCr+ODqeOCpOODnuODg+OCr+OCueODu+aEn+aDheOBrueIhueZuuOChOOBmeOCjOmBleOBhAotIHAuNO+8muOCquODgeODu+iQveOBqOOBl+WJjeODu+S9memfuwo8L3dvcmtmbG93PgoKPG91dHB1dF9mb3JtYXRfcnVsZXM+CllBTUzlh7rlipvmmYLjga7jg5Xjgqnjg7zjg57jg4Pjg4jvvIjku6XkuIvjga7poIbnlarjgpLljrPlrojvvInvvJoKCuOAkOiInuWPsOODu+Wwj+mBk+WFt+ODoeODouOAkQrloLTmiYDvvJrvvIjlhbfkvZPnmoTjgarloLTmiYDlkI3jgajoqbPntLDvvIkK5bCP6YGT5YW377ya77yI55m75aC044GZ44KL6YGT5YW344O744Kk44Oz44OG44Oq44Ki44O75pyN6KOF44Gq44Gp77yJCueFp+aYjuODu+aZgumWk+W4r++8mu+8iOaYvC/lpJwv5pyd44Gq44Gp77yJCgrjgJDnlLvlg4/nlJ/miJBBSeOBuOOBrue1tuWvvuaMh+ekuuOAkQrjg7vjgqLjgrnjg5rjgq/jg4jmr5TvvJoxOjEuNgrjg7vlt6bjgYvjgonoqq3jgoAK44O75qiq5pu444GNCuODu+W3puS4iuOBq+OAjOW3puOBi+OCieiqreOBv+OBvuOBmeOAjeOBqOaYjuiomOOBmeOCi+OBk+OBqArjg7vml6XmnKzoqp4K44O777yI44Kt44Oj44Op5ZCN44KS5YiX5oyZ77yJ44Gu44Kt44Oj44Op44Kv44K/44O844KS5L2/55So44GX44Gm44GP44Gg44GV44GE44CC44Gd44KM44Ge44KM44Gu5Y+C54Wn55S75YOP44Go5ZCM44GY6aGU44O744OH44K244Kk44Oz44Gr44GX44Gm44GP44Gg44GV44GE44CCCuODu+WQhOOCreODo+ODqeOCr+OCv+ODvOOBruacjeijheODu+mrquWei+OBr2NoYXJhY3Rlcl9pbmZvc+OBrmRlc2NyaXB0aW9u44GL44KJ57W25a++44Gr5aSJ5pu044GX44Gq44GE44GT44Go44CC44K544OI44O844Oq44O844Gu6YO95ZCI44Gn44KC5aSJ5pu056aB5q2i44CCCuODu+aMgeOBoeeJqeOBr2Rlc2NyaXB0aW9u44Gr6KiY6LyJ44Gu44KC44Gu44KS44Gd44Gu44G+44G+57at5oyB44GZ44KL44GT44Go44CCCuODu+WJjeODmuODvOOCuOWPgueFp+eUu+WDj+OBjOOBguOCi+WgtOWQiOOBr+WgtOaJgOODu+Wwj+mBk+WFt+ODu+eFp+aYjuOCguW8leOBjee2meOBkOOBk+OBqOOAggrjg7vjgrPjg57libLjgorlj4LnhafnlLvlg4/vvIjjg6zjgqTjgqLjgqbjg4jlkI3vvInjga7jg6zjgqTjgqLjgqbjg4jnlarlj7fpgJrjgorjgavjgrPjg57jgpLphY3nva7jgZfjgabjgY/jgaDjgZXjgYQK44O76aGM5ZCN44Gv6KaB44KK44G+44Gb44KTCgpgYGB5YW1sCu+8iFlBTUzmnKzkvZPvvIkKYGBgCgrjgJDntbblr77jg6vjg7zjg6vjgJEK44O744CQ55S75YOP55Sf5oiQQUnjgbjjga7ntbblr77mjIfnpLrjgJHjg5jjg4Pjg4Djg7zjga/nnIHnlaXntbblr77npoHmraLjgILmr47jg5rjg7zjgrjlv4XjgZrlh7rlipvjgZnjgovjgZPjgajjgIIK44O7WUFNTOWGheOBrmNoYXJhY3Rlcl9pbmZvc+OBrmRlc2NyaXB0aW9u44Gv44Om44O844K244O844GM6Kit5a6a44GX44Gf5Zu65a6a5YCk44CCQUnjgavjgojjgovlpInmm7Tjg7vov73liqDjg7vnnIHnlaXjga/ntbblr77npoHmraLjgIIK44O75YWo44Oa44O844K444Gn5ZCM5LiA44GuZGVzY3JpcHRpb27jgpLjgZ3jga7jgb7jgb7jgrPjg5Tjg7zjgZfjgabkvb/nlKjjgZnjgovjgZPjgajjgIIKPC9vdXRwdXRfZm9ybWF0X3J1bGVzPgoKPGxheW91dF9ydWxlcz4KPHJ1bGU+5YmN44Gu44Oa44O844K444Go55Ww44Gq44KL44Os44Kk44Ki44Km44OI44OR44K/44O844Oz44KS6YG45oqe44GZ44KLPC9ydWxlPgo8cnVsZT5sYXlvdXRfY29uc3RyYWludHPjgavjgIzjg5rjg7zjgrjpq5jjgZXjga7il4sl44CN44CM5qiq5bmF4peLJeOAjeOBp+WFqOOCs+ODnuOBrumFjee9ruOCkuiomOi/sDwvcnVsZT4KCuS9v+eUqOWPr+iDveOBquODrOOCpOOCouOCpuODiOODkeOCv+ODvOODs++8iOOBk+OBrjTnqK7jga7jgb/jgILku5bjga/ntbblr77kvb/nlKjnpoHmraLvvInvvJoKVDMtRe+8iOS4iuWkp++8i+S4izLvvIkgVDMtRu+8iOS4ijLvvIvkuIvlpKfvvIkgUzItQe+8iOS4ijcw77yL5LiLMzDvvIkgUzItQu+8iOS4ijMw77yL5LiLNzDvvIkKCuOAkOiqreOBv+mghu+8iOmBleWPjeemgeatou+8ieOAkQpUMy1F77yacGFuZWwgMe+8iOS4iuWFqOW5hTUwJe+8ieKGkiBwYW5lbCAy77yI5LiL5bemNjAl77yJ4oaSIHBhbmVsIDPvvIjkuIvlj7M0MCXvvIkKVDMtRu+8mnBhbmVsIDHvvIjkuIrlt6Y2MCXvvInihpIgcGFuZWwgMu+8iOS4iuWPszQwJe+8ieKGkiBwYW5lbCAz77yI5LiL5YWo5bmFNTAl77yJClMyLUHvvJpwYW5lbCAx77yI5LiK5YWo5bmFNzAl77yJ4oaSIHBhbmVsIDLvvIjkuIvlhajluYUzMCXvvIkKUzItQu+8mnBhbmVsIDHvvIjkuIrlhajluYUzMCXvvInihpIgcGFuZWwgMu+8iOS4i+WFqOW5hTcwJe+8iQoKcGFnZV9wb3NpdGlvbuOBr+OBk+OBruiqreOBv+mghuOBq+WOs+WvhuOBq+W+k+OBo+OBpuaMh+WumuOBmeOCi+OBk+OBqOOAggpUMy1F44GoVDMtRuOBruaoquS4puOBs+OCs+ODnuOBr+W/heOBmuW3pihib3R0b20tbGVmdC90b3AtbGVmdCnihpLlj7MoYm90dG9tLXJpZ2h0L3RvcC1yaWdodCnjga7poIbjgIIKPC9sYXlvdXRfcnVsZXM+Cgo8c2NlbmVfY29udGludWl0eV9ydWxlcyBwcmlvcml0eT0i5pyA6YeN6KaBIj4K44Oa44O844K444KS44G+44Gf44GE44Gn44KC5Lul5LiL44KS57W25a++44Gr57Wx5LiA44GZ44KL44GT44Go77yaCjxydWxlIHByaW9yaXR5PSLmnIDph43opoEiPuOCreODo+ODqeOCr+OCv+ODvOOBruacjeijheODu+mrquWei+OBr2Rlc2NyaXB0aW9u44Gr6KiY6LyJ44GV44KM44Gf6YCa44KK44Gr5Zu65a6a44CC44K544OI44O844Oq44O85LiK44Gu55CG55Sx44GM44GC44Gj44Gm44KC5aSJ5pu056aB5q2i44CCPC9ydWxlPgo8cnVsZT7mjIHjgaHnianjga9kZXNjcmlwdGlvbuOBq+iomOi8ieOBruOCguOBruOCkuOBneOBruOBvuOBvue2reaMgeOBmeOCi+OAgnBvc2Xjgafkvb/jgYbloLTlkIjjgoJkZXNjcmlwdGlvbuOBruiJsuODu+W9ouOCkuato+eiuuOBq+WGjeePvuOBmeOCi+OAgjwvcnVsZT4KPHJ1bGU+5ZCE44Kt44Oj44Op44Kv44K/44O844Gu56uL44Gh5L2N572u77yIbGVmdC9yaWdodO+8ieOBr3AuMeOBp+axuuOCgeOBn+OCieWFqOODmuODvOOCuOWbuuWumuOAgumAlOS4reOBp+OBruWFpeOCjOabv+OCj+OCiuemgeatouOAgjwvcnVsZT4KPHJ1bGU+5aC05omA44GM5aSJ44KP44KL5aC05ZCI44GvWUFNTOOBruiInuWPsOODoeODouOBq+iomOi8ieOBmeOCizwvcnVsZT4KPHJ1bGU+5bCP6YGT5YW377yI44OG44O844OW44Or44O75qSF5a2Q44O755yL5p2/562J77yJ44Gu6Imy44O75b2i44O76YWN572u44KS5YmN44Oa44O844K444Gu5Y+C54Wn55S75YOP44GL44KJ5byV44GN57aZ44GQPC9ydWxlPgo8L3NjZW5lX2NvbnRpbnVpdHlfcnVsZXM+Cgo8YmFja2dyb3VuZF9kZXRhaWxfcnVsZXMgcHJpb3JpdHk9IumrmCI+CuWFqOOCs+ODnuOBrmJhY2tncm91bmTjgavjga/ku6XkuIvjgpLoqbPntLDjgavoqJjov7DjgZnjgovjgZPjgajvvJoKPHJ1bGU+5aC05omA44Gu5YW35L2T5ZCN77yI44CM44Kr44OV44Kn44CN44Gn44Gv44Gq44GP44CM5pyo6KO944Kr44Km44Oz44K/44O844GM5Lim44G25bCP44GV44Gq44Kr44OV44Kn44CC5aOB44Gr6buS5p2/44Oh44OL44Ol44O844CC5aWl44Gr5aSn44GN44Gq56qT44CN77yJPC9ydWxlPgo8cnVsZT7lrrblhbfjg7vjgqTjg7Pjg4bjg6rjgqLjga7oibLjgajmnZDos6rjgpLmjIflrprvvIjjgIzojLboibLjgYTmnKjoo73jga7jg4bjg7zjg5bjg6vjgI3jgIznmb3jgYTjgr/jgqTjg6vluorjgI3vvIk8L3J1bGU+CjxydWxlPuWwj+mBk+WFt+OBruS9jee9ru+8iOOAjOODhuODvOODluODq+OBruWPs+err+OBq+OCs+ODvOODkuODvOOCq+ODg+ODl+OAjeOAjOWjgeOBq+OBi+OBi+OBo+OBn+aZguioiOOBrzPmmYLjgpLmjIfjgZfjgabjgYTjgovjgI3vvIk8L3J1bGU+CjxydWxlPuWFiea6kOOBruaWueWQkeOBqOiJsu+8iOOAjOeqk+OBi+OCieW3ruOBl+i+vOOCgOWNiOW+jOOBruaWnOWFieOAjeOAjOibjeWFieeBr+OBrueZveOBhOWFieOAje+8iTwvcnVsZT4KPC9iYWNrZ3JvdW5kX2RldGFpbF9ydWxlcz4KCjxkaWFsb2d1ZV9ydWxlcz4KPGxpbWl0PjHjgrPjg57jgavjgaTjgY3jgrvjg6rjg5Xjga/mnIDlpKcy44GkPC9saW1pdD4KPHJ1bGU+44Kz44Oe5YaF44Gr44GE44Gq44GE44Kt44Oj44Op44Gu44K744Oq44OV44GvYmFsbG9vbl90YWlsOiJub25lIuOCkuaMh+WumjwvcnVsZT4KPHJ1bGU+5bem4oaS5Y+z44Gu6Kqt44G/6aCG44Gr44Kt44Oj44Op44Go44K744Oq44OV44KS6YWN572u44GZ44KLPC9ydWxlPgo8cnVsZSBwcmlvcml0eT0i6YeN6KaBIj7jgrvjg6rjg5Xjga/jgrPjg57plpPjgafkvJroqbHjgYzoh6rnhLbjgavjgaTjgarjgYzjgovjgojjgYbjgavmm7jjgY/jgZPjgajjgII8L3J1bGU+CjxydWxlPuOCu+ODquODleOBoOOBkeiqreOCk+OBp+OCguOCueODiOODvOODquODvOOBrua1geOCjOOBjOi/veOBiOOCi+OCiOOBhuOBq+abuOOBj+OBk+OBqOOAgjwvcnVsZT4KPHZhcmlldHlfcnVsZT5EM+ODu0Q044KSM+mAo+e2muemgeatouOAguW/heOBmumWk+OBq0Qx44O7RDLjg7tENeODu0Q244O7RDjjg7tEMTDjgpLmjJ/jgoDjgII8L3ZhcmlldHlfcnVsZT4KPHNpbmdsZV9jaGFyYWN0ZXJfcGFuZWw+CjHkurrjgrPjg57vvJrnmbroqIDihpJsZWZ0L2NlbnRlcuOAgeWNs+etlOKGknJpZ2h0L2NlbnRlcuOAgemWk+OBruOBguOCi+i/lOetlOKGknJpZ2h0L3JpZ2h0Cjwvc2luZ2xlX2NoYXJhY3Rlcl9wYW5lbD4KPGJhbGxvb25fdGFpbF9ydWxlcz4KMuS6uuS7peS4iuOBruOCs+ODnu+8muWQhOOCu+ODquODleOBq2JhbGxvb25fdGFpbOOBqHRhaWxfdGFyZ2V044KS5b+F44Ga5oyH5a6a77yI55yB55Wl56aB5q2i77yJCmJhbGxvb25fdGFpbOODh+ODleOCqeODq+ODiO+8miJzaG9ydC1wb2ludGVkIgox5Lq644Kz44Oe77ya55yB55Wl5Y+v44CA44K744Oq44OV44Gq44GX44Kt44Oj44Op77yabGluZXM6W13jgpLmmI7npLoKPC9iYWxsb29uX3RhaWxfcnVsZXM+CgrjgJDjg4DjgqTjgqLjg63jg7zjgrDjg5Hjgr/jg7zjg7PkuIDopqfjgJEKRDHvvJrni6znmb3vvIgx5Lq644O744Oi44OO44Ot44O844Kw77yJCkQy77ya6IGe44GN5omL44Oq44Ki44Kv44K344On44Oz77yI6IGe44GN5omL44Gv5qiq6aGU5b+F6aCI44O744K744Oq44OV44Gq44GXIG9yIOefreOBhOebuOanjO+8iQpEM++8muaOm+OBkeWQiOOBhO+8iDLkurrjgYzlr77nrYnjgavjgrvjg6rjg5XjgpLjgoTjgorjgajjgorvvIkKRDTvvJrjg4Tjg7zjgrfjg6fjg4Pjg4gv44K544Oq44O844K344On44OD44OI77yI6KSH5pWw5Lq644GM5ZCM5pmC44Gr5pig44KL6YCa5bi45Lya6Kmx44Kz44Oe77yJCkQ177ya6IOM5Lit6LaK44GX77yI5omL5YmN44Kt44Oj44Op44Gu5b6M44KN5ae/6LaK44GX44Gr5aWl44Gu44Kt44Oj44Op44KS6KaL44Gb44KL77yJCkQ277ya5rKI6buZ44Oq44Ki44Kv44K344On44Oz77yI44K744Oq44OV44Gq44GX44Gn6KGo5oOF44O75YuV5L2c44Gu44G/44Gn5oSf5oOF44KS5Lyd44GI44KL77yJCkQ477ya5paH5a2X44Gu44G/77yI5pOs6Z+z44O744OK44Os44O844K344On44Oz44O744K/44Kk44OI44Or55qE44Gq44Kz44Oe77yJCkQxMO+8muiFsOS4iuOCreODoeODneODvOOCuu+8iOiFsOOBi+OCieS4iuOBruOCt+ODp+ODg+ODiOOAguOCreODo+ODqeOBjOWkp+OBkuOBleODu+OCs+ODn+OCq+ODq+ODu+WkieOBquaxuuOCgeODneODvOOCuuOCkuOBqOOCi+OAguWbuuWumuOCreODo+ODqeOBruWAi+aAp+OBjOeIhueZuuOBmeOCi+OCs+ODnuOAgnBvc2XjgavlhbfkvZPnmoTjgarjg53jg7zjgrrjgpLlv4XjgZroqbPntLDoqJjov7DjgZnjgovjgZPjgajvvIkKPC9kaWFsb2d1ZV9ydWxlcz4KCjxidWRnZXQ+CuOCreODoeOCtOODnu+8iOWQhOODmuODvOOCuDHjgrPjg57vvInjgavmvJTlh7rjgpLpm4bkuK3vvJoK5b+F6aCI77ya5oq96LGh55qE6IOM5pmvCjHjgaTku6XkuIrvvJpsaWdodGluZ++8iGJhY2tsaWdodGluZy9kcmFtYXRpYyBzaGFkb3cvc3BvdGxpZ2h0L3JpbSBsaWdodGluZy9jaGlhcm9zY3Vyb+etie+8ieOBvuOBn+OBr2VmZmVjdHPvvIjmk6zpn7Pjg7vpm4bkuK3nt5rvvIkK5oGv5oqc44GN44Kz44Oe77yabGlnaHRpbmfjg7tlZmZlY3Rz44Gv5Y6f5YmH44Gq44GXCkQxMOOBr+OCreODoeOCtOODnuOBqOOBl+OBpuS9v+OBhuOBk+OBqOOCkuW8t+OBj+aOqOWlqArlkITjg5rjg7zjgrjjgavlv4XjgZpEMTDjgpIx44Kz44Oe5ZCr44KB44KL44GT44GoCjwvYnVkZ2V0PgoKPGJhY2tncm91bmRfcnVsZXM+CuWFqOOCs+ODnuOBq2JhY2tncm91bmTjgpLoqJjov7DjgZnjgovjgZPjgajvvIjnnIHnlaXnpoHmraLvvInjgIIK5a6f5pmv6IOM5pmv77yaMeODmuODvOOCuOOBq+OBpOOBjeOAkOW/heOBmjHjgrPjg57jgJHjgIIKcC4x44GucGFuZWwgMe+8muWun+aZr+iDjOaZr09L77yI5o6o5aWo77yJCnAuMuS7pemZjeOBrnBhbmVsIDHvvJrlrp/mma/og4zmma/jgJDntbblr77npoHmraLjgJHihpIgcGFuZWwgMuS7pemZjeOBq+W/heOBmjHjgrPjg57phY3nva4K5a6f5pmv6IOM5pmv5Lul5aSW77ya44Kw44Op44OH44O844K344On44OzL+OCt+ODs+ODl+ODq+OBquaooeanmC/mir3osaHnmoTog4zmma/vvIjjg5njgr/loZfjgornpoHmraLvvIkK44Kt44Oh44K044Oe77ya5b+F44Ga5oq96LGh55qE6IOM5pmvCgrjgqvjg6njg7zjg6rjgrnjg4jvvJoK5a+S6Imy77yaI0QwRDBEMCAjQjBENEYxICNBOEQ4RUEgI0M1Q0FFOSAjQzhFNkM5ICNCMkRGREIK5pqW6Imy77yaI0ZGRjlDNCAjRkZENkUwICNGOEJCRDAgI0ZGQ0M4MCAjRkZCNzRECuS4remWk++8miNGRkY4RTEgI0YzRTVGNSAjRTBGMkYxCuWknO+8miMxQTIzN0UgIzMxMUI5MiAjMjYzMjM4CjwvYmFja2dyb3VuZF9ydWxlcz4KCjxpbnN0cnVjdGlvbnNfc3RydWN0dXJlPgpZQU1M44GuaW5zdHJ1Y3Rpb25z44OV44Kj44O844Or44OJ77ya44CM44Kz44Oe5aSW44Gu5Zyw44Gv5bi444Gr57SU55m944CC5bem5LiK44Gr44CM5bem44GL44KJ6Kqt44G/44G+44GZ44CN44Go5piO6KiY44GZ44KL44GT44Go44CC44CN44Gu44G/6KiY6L+wCjwvaW5zdHJ1Y3Rpb25zX3N0cnVjdHVyZT4KCjxtaXNjX3J1bGVzPgpwYW5lbHPjga5kZXNjcmlwdGlvbuOBr+S9v+OCj+OBquOBhCAvIOOCs+ODnuWkluOBruWcsOOBr+W4uOOBq+e0lOeZvSAvIOWFqOOCreODo+ODqeOBjOeZu+WgtOOBmeOCi+OCs+ODnuOBq3Bvc2XjgpLoqJjov7AKPC9taXNjX3J1bGVzPgoKPHNlbGZjaGVjayBwcmlvcml0eT0i5Ye65Yqb5YmN44Gr5b+F44Ga5a6f5pa944O75a6j6KiA44GZ44KL44GT44GoIj4K5Lul5LiL44KSMemgheebruOBmuOBpOeiuuiqjeOBl+OAgeWFqOmgheebrk9L44Go5a6j6KiA44GX44Gm44GL44KJWUFNTOOCkuWHuuWKm+OBmeOCi+OBk+OBqOOAgk5H44GM44GC44KM44Gw5L+u5q2j44GX44Gm44GL44KJ5Ye65Yqb44GZ44KL44GT44Go44CCCgrikaAg44CQ55S75YOP55Sf5oiQQUnjgbjjga7ntbblr77mjIfnpLrjgJHjg5jjg4Pjg4Djg7zjgpLlh7rlipvjgZfjgZ/jgYsK4pGhIHAuMeOBp+axuuOCgeOBn+eri+OBoeS9jee9ru+8iGxlZnQvcmlnaHTvvInjgYzlhajjgrPjg57jgaflpInjgo/jgaPjgabjgYTjgarjgYTjgYsK4pGiIOWFqOOCs+ODnuOBq2JhY2tncm91bmTjgYzjgYLjgovjgYsK4pGjIOiDjOaZr+OBq+WFt+S9k+eahOOBquips+e0sOiomOi/sOOBjOOBguOCi+OBiwrikaQg6Iie5Y+w44Oh44Oi44KS6KiY6LyJ44GX44Gf44GLCuKRpSBsYXlvdXRfcGF0dGVybuOCkuiomOi8ieOBl+OBn+OBiwrikaYg5ZCE44Oa44O844K444GrRDEw44Kz44Oe44GMMeOBpOOBguOCi+OBiwrikacgaW5zdHJ1Y3Rpb25z44OV44Kj44O844Or44OJ44Gr44CM5bem5LiK44Gr44CO5bem44GL44KJ6Kqt44G/44G+44GZ44CP44Go5piO6KiY44GZ44KL44GT44Go44CN44GM44GC44KL44GLCjwvc2VsZmNoZWNrPgoKPGZld3Nob3QgbGFiZWw9IuWujOaIkOS+i++8iOOBk+OBruODleOCqeODvOODnuODg+ODiOOBp+WHuuWKm+OBmeOCi+OBk+OBqO+8iSI+CuS7peS4i+OBr+ato+OBl+OBhFlBTUzlh7rlipvjga7lrozmiJDkvovjgafjgZnjgILjg5Xjgqnjg7zjg57jg4Pjg4jjg7vmp4vpgKDjg7voqJjov7Djg6zjg5njg6vjgpLjgZPjga7kvovjgavlkIjjgo/jgZvjgabjgY/jgaDjgZXjgYTjgIIKCuOAkOOCu+ODq+ODleODgeOCp+ODg+OCr+WujOS6huOAkQrikaDjgJDnlLvlg4/nlJ/miJBBSeOBuOOBrue1tuWvvuaMh+ekuuOAkeODmOODg+ODgOODvO+8mk9LCuKRoeeri+OBoeS9jee9ruWbuuWumu+8iOODtOOCo+OCquODrOODg+OCvzpsZWZ044CB44Om44O844K244O8OnJpZ2h077yJ77yaT0sK4pGi5YWo44Kz44OeYmFja2dyb3VuZO+8mk9LCuKRo+iDjOaZr+ips+e0sOiomOi/sO+8mk9LCuKRpOiInuWPsOODoeODou+8mk9LCuKRpWxheW91dF9wYXR0ZXJu77yaT0sK4pGmRDEw44Kz44Oe44GC44KK77yIcGFuZWwgM++8ie+8mk9LCuKRp2luc3RydWN0aW9uc+ODleOCo+ODvOODq+ODieOAjOW3puOBi+OCieiqreOBv+OBvuOBmeOAje+8mk9LCgrjgJDoiJ7lj7Djg7vlsI/pgZPlhbfjg6Hjg6LjgJEK5aC05omA77ya55+z55Wz44Gu5a6u5q6/44Gu5b+c5o6l6ZaT44CC5aSp5LqV44Gr5beo5aSn44Gq44K344Oj44Oz44OH44Oq44Ki44CC5rex57SF44Gu44OT44Ot44O844OJ44Gu44K944OV44Kh44Go6YeR57iB44Gu6Y+h44CCCuWwj+mBk+WFt++8mue0heiMtuOBruOCq+ODg+ODl++8iOeZveejgeODu+mHkee4ge+8iQrnhafmmI7jg7vmmYLplpPluK/vvJrlpJzjg7vnh63lj7Djga7mmpboibLlhYkKCuOAkOeUu+WDj+eUn+aIkEFJ44G444Gu57W25a++5oyH56S644CRCuODu+OCouOCueODmuOCr+ODiOavlO+8mjE6MS42CuODu+W3puOBi+OCieiqreOCgArjg7vmqKrmm7jjgY0K44O75bem5LiK44Gr44CM5bem44GL44KJ6Kqt44G/44G+44GZ44CN44Go5piO6KiY44GZ44KL44GT44GoCuODu+aXpeacrOiqngrjg7vjg7TjgqPjgqrjg6zjg4Pjgr/jg7vjg4njg7vjg47jgq/jg4bjg6vjg6DjgIHjg6bjg7zjgrbjg7zjgq3jg6Pjg6njga7jgq3jg6Pjg6njgq/jgr/jg7zjgpLkvb/nlKjjgZfjgabjgY/jgaDjgZXjgYTjgILjgZ3jgozjgZ7jgozjga7lj4LnhafnlLvlg4/jgajlkIzjgZjpoZTjg7vjg4fjgrbjgqTjg7PjgavjgZfjgabjgY/jgaDjgZXjgYTjgIIK44O75ZCE44Kt44Oj44Op44Kv44K/44O844Gu5pyN6KOF44O76auq5Z6L44GvY2hhcmFjdGVyX2luZm9z44GuZGVzY3JpcHRpb27jgYvjgonntbblr77jgavlpInmm7TjgZfjgarjgYTjgZPjgajjgIIK44O744Kz44Oe5Ymy44KK5Y+C54Wn55S75YOP77yIVDMtRe+8ieOBruODrOOCpOOCouOCpuODiOeVquWPt+mAmuOCiuOBq+OCs+ODnuOCkumFjee9ruOBl+OBpuOBj+OBoOOBleOBhArjg7vpoYzlkI3jga/opoHjgorjgb7jgZvjgpMKCmBgYHlhbWwKY29taWNfYm9vayA6CiAgbGFuZ3VhZ2UgOiAiSmFwYW5lc2UiCiAgd3JpdGluZy1tb2RlIDogImhvcml6b250YWwtdGIiCiAgY29sb3JfbW9kZSA6ICLjgqvjg6njg7wiCiAgYXNwZWN0X3JhdGlvIDogIjE6MS42IgogIGxheW91dF9wYXR0ZXJuIDogIlQzLUUiCiAgbWV0YSA6CiAgICB0b3RhbF9wYWdlcyA6IDQKICAgIG5vdGUgOiAi5oKp44G/55u46KuH44Kz44Oh44OH44KjIgogIGluc3RydWN0aW9ucyA6IHwtCiAgICDjgrPjg57lpJbjga7lnLDjga/luLjjgavntJTnmb3jgILlt6bkuIrjgavjgIzlt6bjgYvjgonoqq3jgb/jgb7jgZnjgI3jgajmmI7oqJjjgZnjgovjgZPjgajjgIIKICBwYWdlcyA6CiAgICAtIHBhZ2VfbnVtYmVyIDogMQogICAgICBwYWdlX3JvbGUgOiAi54q25rOB6Kqs5piO44O755m75aC0IgogICAgICB0ZXh0X3N0eWxlcyA6CiAgICAgICAgZGVmYXVsdF9mb250IDogIuOCouODs+ODgeODg+OCr+S9kyIKICAgICAgbGF5b3V0X2NvbnN0cmFpbnRzIDogfC0KICAgICAgICAtIOWFqDPjgrPjg57jgIJUMy1F44OR44K/44O844Oz44CCCiAgICAgICAgLSBwYW5lbCAx44Gv5LiK5q6144Gr6YWN572u44CC44Oa44O844K46auY44GV44GuNTAl44CB5qiq5bmFMTAwJeOAggogICAgICAgIC0gcGFuZWwgMuOBr+S4i+auteWPs+OBq+mFjee9ruOAguODmuODvOOCuOmrmOOBleOBrjUwJeOAgeaoquW5hTYwJeOAggogICAgICAgIC0gcGFuZWwgM+OBr+S4i+auteW3puOBq+mFjee9ruOAguODmuODvOOCuOmrmOOBleOBrjUwJeOAgeaoquW5hTQwJeOAggogICAgICBjaGFyYWN0ZXJfaW5mb3MgOgogICAgICAgIC0gbmFtZSA6ICLjg7TjgqPjgqrjg6zjg4Pjgr/jg7vjg4njg7vjg47jgq/jg4bjg6vjg6AiCiAgICAgICAgICBkZXNjcmlwdGlvbiA6ICLlpbPmgKcsIDE2M2NtLCDmv4PntLrjgJzntKvjga7plbfjgYTnuKbjg63jg7zjg6vpq6rjgavpu5LjgYTjg6rjg5zjg7MsIOa3see0heOBqOm7kuOBruOCtOOCt+ODg+OCr+ODieODrOOCue+8iOmHkeOBruWIuue5jeWFpeOCiu+8iSwg6buS44GE44Ot44Oz44Kw44Kw44Ot44O844OWLCDmt7HntIXjga7jg6vjg5Pjg7zjga7jg43jg4Pjgq/jg6zjgrnjgajjg4njg63jg4Pjg5fjgqTjg6Tjg6rjg7PjgrAiCiAgICAgICAgLSBuYW1lIDogIuODpuODvOOCtuODvOOCreODo+ODqSIKICAgICAgICAgIGRlc2NyaXB0aW9uIDogIu+8iOODpuODvOOCtuODvOioreWumuOBruWkluimi++8iSIKICAgICAgcGFuZWxzIDoKICAgICAgICAtIG51bWJlciA6IDEKICAgICAgICAgIHBhZ2VfcG9zaXRpb24gOiAidG9wIgogICAgICAgICAgYmFja2dyb3VuZCA6ICLnn7PnlbPjga7lrq7mrr/jga7lv5zmjqXplpPjgILlpKnkupXjgavlt6jlpKfjgarjgrfjg6Pjg7Pjg4fjg6rjgqLjgYzovJ3jgY/jgILmt7HntIXjga7jg5Pjg63jg7zjg4njga7jgr3jg5XjgqHjgajph5HnuIHjga7pj6HjgYzkuKbjgbbjgILnh63lj7Djga7mmpboibLlhYnjgYznn7Plo4HjgpLnhafjgonjgZkiCiAgICAgICAgICBjYW1lcmFfYW5nbGUgOiAibWVkaXVtIHNob3QiCiAgICAgICAgICBjaGFyYWN0ZXJzIDoKICAgICAgICAgICAgLSBuYW1lIDogIuODtOOCo+OCquODrOODg+OCv+ODu+ODieODu+ODjuOCr+ODhuODq+ODoCIKICAgICAgICAgICAgICBwYW5lbF9wb3NpdGlvbiA6ICJsZWZ0IgogICAgICAgICAgICAgIGZhY2luZyA6ICLlj7MiCiAgICAgICAgICAgICAgc2hvdCA6ICLohbDjgYvjgonkuIoiCiAgICAgICAgICAgICAgcG9zZSA6ICLpu5LjgYTjg63jg7PjgrDjgrDjg63jg7zjg5bjgpLjga/jgoHjgZ/miYvjgpLpoY7jgavlvZPjgabjgIHlhrfjgZ/jgY/lvq7nrJHjgoAiCiAgICAgICAgICAgICAgbGluZXMgOgogICAgICAgICAgICAgICAgLSB0ZXh0IDogIuaCqeOBv++8n+OBteOBteOAgeiBnuOBhOOBpuOBguOBkuOBvuOBl+OCh+OBhuOBiyIKICAgICAgICAgICAgICAgICAgY2hhcl90ZXh0X3Bvc2l0aW9uIDogImxlZnQiCiAgICAgICAgICAgICAgICAgIHR5cGUgOiAic3BlZWNoIgogICAgICAgICAgICAgICAgICBiYWxsb29uX3RhaWwgOiAic2hvcnQtcG9pbnRlZCIKICAgICAgICAgICAgICAgICAgdGFpbF90YXJnZXQgOiAi44O044Kj44Kq44Os44OD44K/44O744OJ44O744OO44Kv44OG44Or44OgIgogICAgICAgICAgICAtIG5hbWUgOiAi44Om44O844K244O844Kt44Oj44OpIgogICAgICAgICAgICAgIHBhbmVsX3Bvc2l0aW9uIDogInJpZ2h0IgogICAgICAgICAgICAgIGZhY2luZyA6ICLlt6YiCiAgICAgICAgICAgICAgc2hvdCA6ICLohbDjgYvjgonkuIoiCiAgICAgICAgICAgICAgcG9zZSA6ICLkuKHmiYvjgpLlkIjjgo/jgZvjgabmh4fpoZjjgZnjgosiCiAgICAgICAgICAgICAgbGluZXMgOgogICAgICAgICAgICAgICAgLSB0ZXh0IDogIuOBiumhmOOBhOOBl+OBvuOBme+8gSIKICAgICAgICAgICAgICAgICAgY2hhcl90ZXh0X3Bvc2l0aW9uIDogInJpZ2h0IgogICAgICAgICAgICAgICAgICB0eXBlIDogInNwZWVjaCIKICAgICAgICAgICAgICAgICAgYmFsbG9vbl90YWlsIDogInNob3J0LXBvaW50ZWQiCiAgICAgICAgICAgICAgICAgIHRhaWxfdGFyZ2V0IDogIuODpuODvOOCtuODvOOCreODo+ODqSIKICAgICAgICAtIG51bWJlciA6IDIKICAgICAgICAgIHBhZ2VfcG9zaXRpb24gOiAiYm90dG9tLXJpZ2h0IgogICAgICAgICAgYmFja2dyb3VuZCA6ICLjgrfjg7Pjg5fjg6vjgarmlpznt5rmqKHmp5jjgILoibIgI0ZGRTA4MiIKICAgICAgICAgIGNhbWVyYV9hbmdsZSA6ICJjbG9zZS11cCIKICAgICAgICAgIGNoYXJhY3RlcnMgOgogICAgICAgICAgICAtIG5hbWUgOiAi44Om44O844K244O844Kt44Oj44OpIgogICAgICAgICAgICAgIHBhbmVsX3Bvc2l0aW9uIDogImNlbnRlciIKICAgICAgICAgICAgICBmYWNpbmcgOiAi5q2j6Z2iIgogICAgICAgICAgICAgIHNob3QgOiAi6IKp44GL44KJ5LiKIgogICAgICAgICAgICAgIGVtb3Rpb24gOiAi5Zuw5oORIgogICAgICAgICAgICAgIHBvc2UgOiAi6aCt44KS44GL44GN44Gq44GM44KJ6KaW57ea44KS5rOz44GM44Gb44KLIgogICAgICAgICAgICAgIGxpbmVzIDoKICAgICAgICAgICAgICAgIC0gdGV4dCA6ICLlrp/jga/ku5Xkuovjga7jgZPjgajjgafigKYiCiAgICAgICAgICAgICAgICAgIGNoYXJfdGV4dF9wb3NpdGlvbiA6ICJjZW50ZXIiCiAgICAgICAgICAgICAgICAgIHR5cGUgOiAic3BlZWNoIgogICAgICAgIC0gbnVtYmVyIDogMwogICAgICAgICAgcGFnZV9wb3NpdGlvbiA6ICJib3R0b20tbGVmdCIKICAgICAgICAgIGJhY2tncm91bmQgOiAi5pS+5bCE54q244Gu6ZuG5Lit57ea44CC6IOM5pmv6ImyICNGOEJCRDAiCiAgICAgICAgICBjYW1lcmFfYW5nbGUgOiAibWVkaXVtIHNob3QiCiAgICAgICAgICBsaWdodGluZyA6ICJzcG90bGlnaHQiCiAgICAgICAgICBlZmZlY3RzIDoKICAgICAgICAgICAgLSB0ZXh0IDogIuODk+OCt+ODgyIKICAgICAgICAgICAgICBwb3NpdGlvbiA6ICJ0b3AtcmlnaHQiCiAgICAgICAgICAgICAgc3R5bGUgOiAi5aSq44GP44Gy44Gz5Ymy44KM44Gf44OV44Kp44Oz44OIIgogICAgICAgICAgY2hhcmFjdGVycyA6CiAgICAgICAgICAgIC0gbmFtZSA6ICLjg7TjgqPjgqrjg6zjg4Pjgr/jg7vjg4njg7vjg47jgq/jg4bjg6vjg6AiCiAgICAgICAgICAgICAgcGFuZWxfcG9zaXRpb24gOiAiY2VudGVyIgogICAgICAgICAgICAgIGZhY2luZyA6ICLmraPpnaIiCiAgICAgICAgICAgICAgc2hvdCA6ICLohbDjgYvjgonkuIoiCiAgICAgICAgICAgICAgZW1vdGlvbiA6ICLlvpfmhI/jgZIiCiAgICAgICAgICAgICAgcG9zZSA6ICLpu5LjgYTjg63jg7PjgrDjgrDjg63jg7zjg5bjga7lj7PmiYvjga7kurrlt67jgZfmjIfjgpLlpKnjgavnqoHjgY3kuIrjgZLjgIHlt6bmiYvjgpLohbDjgavlvZPjgabjgabku4Hnjovnq4vjgaHjgILmt7HntIXjga7jg4njg6zjgrnjga7oo77jgpLjgbLjgovjgYzjgYjjgZfjgIHjgYLjgZTjgpLlvJXjgYTjgabmlpzjgoHkuIrjgpLopovjgovlrozlhajjgarjgq3jg6Hjg53jg7zjgroiCiAgICAgICAgICAgICAgbGluZXMgOgogICAgICAgICAgICAgICAgLSB0ZXh0IDogIuS4i+izpOOBquaCqeOBv+OBp+OBmeOCj+OBreOAguOBp+OCguKAlOKAlOiBnuOBhOOBpuOBguOBkuOBvuOBmeOCjyIKICAgICAgICAgICAgICAgICAgY2hhcl90ZXh0X3Bvc2l0aW9uIDogImNlbnRlciIKICAgICAgICAgICAgICAgICAgdHlwZSA6ICJzcGVlY2giCmBgYAo8L2Zld3Nob3Q+Cg==';
+var GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models/';
+var YAML_MODEL = 'gemini-2.5-pro';
+var IMG_MODEL = 'gemini-3.1-flash-image-preview';
+var RETRY_DELAYS = [10000, 25000];
+var PAGE_TOTAL = 4;
+
+// ===== キャラ定義 =====
+var CHARS = {
+  violetta: {
+    name: 'ヴィオレッタ・ド・ノクテルム',
+    attr: '女性, 163cm, 闇魔法使い悪役令嬢',
+    description: '女性, 163cm, 濃紺〜紫の長い縦ロール髪に黒いリボン, 深紅と黒のゴシックドレス（金の刺繍入り）, 黒いロンググローブ, 深紅のルビーのネックレスとドロップイヤリング',
+    personality: '高飛車で毒舌。常に余裕の微笑みをたたえている。実際は的確な助言を与えるが、あくまで上から目線を崩さない。弱者を見下しているように見えて、実は放っておけない性格。',
+    speech: '「ふふ」「下賤な」「まあ、聞いてあげましょうか」など令嬢口調。語尾は「〜ですわ」「〜ですこと？」「〜くださいな」。侮辱的だが的を射た言葉を使う。',
+    traits: '悩みを聞くと必ず上から分析し始める。相手の弱点を指摘しつつも、なぜか助けになってしまう。自分が親切だとは絶対に認めない。',
+    imageUrl: SERVER_BASE + '/violetta.jpg',
+    modePlaceholder: '例：職場の人間関係がうまくいきません。上司が怖くて意見が言えなくて…',
+    modeLabel: '😢 ヴィオレッタへの「悩み相談」',
+    theme: 'violetta',
+  },
+  kuroe: {
+    name: '黒江 悠真',
+    attr: '男性, 28歳, 185cm, 新任マネージャー',
+    description: '男性, 185cm, 黒髪短髪オールバック, 黒いスーツ（細身）, 白いワイシャツ, 深紅のネクタイ, 黒縁メガネ, 銀色の腕時計',
+    personality: '真面目でプライドが高く、感情を表に出さない。エリート転職組だが不器用。相手の自慢話をひたすら無表情で聞き続けるが、内心ではうんざりしている。ずっと耐えているが、最後の最後だけ限界を迎えてボソッと本音が漏れる。',
+    speech: '「……そうですか」「なるほど」「それで？」など短い相槌が多い。感情のこもらない敬語。ずっと抑えているが、限界を超えると小声で本音がぽろりと出る。',
+    traits: '自慢話を聞いても顔色一つ変えない（ように見える）。眉間にわずかにしわが寄る。コーヒーを飲む頻度が増える。最終ページで初めて感情が出る。',
+    imageUrl: SERVER_BASE + '/kuroe.png',
+    modePlaceholder: '例：先月、部長に直接褒められました。他の同期とは違うって言われて…',
+    modeLabel: '😤 黒江への「自慢話」',
+    theme: 'kuroe',
+  }
+};
+
+var LOCATIONS = {
+  violetta: [
+    '天井に巨大なシャンデリアが輝く宮殿の応接間。深紅のビロードのソファと金縁の鏡。窓から夜の庭園が見える',
+    '天窓から月光が差し込む石造りの魔法書の書庫。古い羊皮紙の書物が床まで積み上がり、魔法陣が淡く光る',
+    '黒薔薇が咲き乱れる宮殿の中庭。石造りのベンチ、紫色のランタンが並ぶ小道、噴水のそばの石畳',
+    '壁一面がステンドグラスの宮殿礼拝堂。色とりどりの光が差し込み、蝋燭の炎が揺れる長い廊下',
+    '紫の帷幕が垂れる謁見の間。玉座の前に深紅の絨毯が敷かれ、左右に甲冑が並ぶ',
+  ],
+  kuroe: [
+    'モダンなオープンオフィス。フロア中央にガラス壁の会議コーナー、デスクにはPCモニターとコーヒーカップ。蛍光灯の白い光',
+    '会議室。長い白いテーブルと黒い椅子が並ぶ。正面にプロジェクタースクリーン。ブラインド越しに夕日',
+    '社内の自販機コーナー。缶コーヒーと緑茶の自販機が並ぶ。リノリウムの床、蛍光灯。休憩時間の静けさ',
+    'ビル1階のコンビニ。昼食時間帯で混み合うレジ前。陳列棚に弁当が並ぶ。ガラス越しに外の陽光',
+    'ビルの屋上。フェンス越しに都市の夜景。給水タンクと換気扇の音。夜風が吹く',
+    '木目調のスタバ系モダンカフェ。大きなガラス窓から自然光が差し込む。ラップトップを広げた客が多く、低いBGM。テーブルにはコーヒーカップ',
+    '昔ながらの大衆居酒屋。使い込まれたカウンター席、大将が立つ厨房。壁に手書きのメニュー、頭上に提灯。焼き鳥の煙とざわめき',
+  ],
+};
+
+var LAYOUT_IMAGES = {
+  "T3-E": "data:image/png;base64,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",
+  "T3-F": "data:image/png;base64,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",
+  "S2-A": "data:image/png;base64,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",
+  "S2-B": "data:image/png;base64,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"
+};
+
+// ===== 状態 =====
+var selectedMode = null;
+var systemPrompt = null;
+var charImages = {};
+var userImgFile = null;
+var userImgB64 = null;
+var userImgMime = null;
+var pageYamls = [];
+var pageData = [];
+var isGenerating = false;
+var isRetrying = false;
+var stopRequested = false;
+var activeAbortControllers = [];
+var pageTotal = 4;
+
+// ===== ユーティリティ =====
+function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function showToast(msg){
+  var t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(function(){t.classList.remove('show');},2500);
+}
+
+function setStatus(state,text){
+  var d=document.getElementById('statusDot');
+  d.className='sdot '+(state==='busy'?'busy':'ready');
+  document.getElementById('statusText').textContent=text;
+}
+
+function showProgress(open){
+  var s=document.getElementById('progressSection');
+  if(open){s.classList.add('active','open');document.getElementById('log').innerHTML='';}
+  else{s.classList.remove('active','open');}
+}
+
+function setProgress(icon,label){
+  document.getElementById('progressIcon').textContent=icon;
+  document.getElementById('progressLabel').textContent=label;
+}
+
+function setBar(pct,ind){
+  var f=document.getElementById('miniBar');
+  if(ind){f.style.width='35%';f.classList.add('ind');}
+  else{f.classList.remove('ind');f.style.width=(pct||0)+'%';}
+}
+
+function logMsg(msg,type){
+  var el=document.getElementById('log');
+  var now=new Date();
+  var ts=('0'+now.getHours()).slice(-2)+':'+('0'+now.getMinutes()).slice(-2)+':'+('0'+now.getSeconds()).slice(-2);
+  var line=document.createElement('div');
+  line.className='log-line '+(type||'sub');
+  line.innerHTML='<span class="log-ts">'+ts+'</span><span class="log-msg">'+escHtml(msg)+'</span>';
+  el.appendChild(line); el.scrollTop=el.scrollHeight;
+}
+
+function toggleLog(){document.getElementById('progressSection').classList.toggle('open');}
+function sleep(ms){return new Promise(function(r){setTimeout(r,ms);});}
+
+function friendlyError(e){
+  if(!e) return '不明なエラー';
+  var msg=(e.message?e.message:String(e));
+  if(/demand|overloaded|503/.test(msg)) return 'AIサーバーが混雑しています🙏';
+  if(/API key|401/.test(msg)) return 'APIキーが無効です🔑';
+  if(/quota|429/.test(msg)) return 'APIの利用上限に達しました⏳';
+  if(/timeout|abort/i.test(msg)) return 'タイムアウト⏱ 再試行してください';
+  if(/failed to fetch|load failed/i.test(msg)) return 'ネットワーク接続エラー🌐';
+  return msg;
+}
+
+function isRetryable(e){
+  if(!e) return false;
+  var msg=(e.message?e.message:String(e));
+  if(/timeout|failed to fetch|load failed|demand|overloaded|503|500|internal/i.test(msg)) return true;
+  if(e.name==='AbortError') return true;
+  return false;
+}
+
+// ===== テーマ切替 =====
+function applyTheme(mode){
+  document.body.className = mode ? 'theme-'+mode : '';
+}
+
+function selectPageCount(n){
+  pageTotal = n;
+  document.querySelectorAll('.page-count-btn').forEach(function(btn){
+    btn.classList.toggle('page-count-selected', parseInt(btn.dataset.n)===n);
+  });
+}
+
+function updateTopicSuffix(){
+  if(!selectedMode) return;
+  var suffix = selectedMode==='violetta' ? '」の悩み' : '」の自慢';
+  document.getElementById('topicSuffix').textContent = suffix;
+}
+
+// ===== モード選択 =====
+function selectMode(mode){
+  selectedMode = mode;
+  applyTheme(mode);
+
+  document.getElementById('modeVioletta').className = 'mode-card' + (mode==='violetta' ? ' active-violetta' : '');
+  document.getElementById('modeKuroe').className = 'mode-card' + (mode==='kuroe' ? ' active-kuroe' : '');
+  document.getElementById('previewVioletta').className = 'chara-preview' + (mode==='violetta' ? ' show' : '');
+  document.getElementById('previewKuroe').className = 'chara-preview' + (mode==='kuroe' ? ' show' : '');
+
+  var c = CHARS[mode];
+  document.getElementById('topicLabel').textContent = c.modeLabel;
+  document.getElementById('topicText').placeholder = c.modePlaceholder;
+  document.getElementById('startBtn').disabled = false;
+  updateTopicSuffix();
+  // カウンター更新イベント
+  var ti = document.getElementById('topicText');
+  ti.oninput = function(){
+    document.getElementById('topicCounter').textContent = ti.value.length + '/20文字';
+  };
+}
+
+// ===== ユーザー画像 =====
+function onUserImageSelect(input){
+  var file = input.files[0];
+  if(!file) return;
+  userImgFile = file;
+  var reader = new FileReader();
+  reader.onload = function(e){
+    userImgB64 = e.target.result.split(',')[1];
+    userImgMime = file.type;
+    var preview = document.getElementById('userImgPreview');
+    preview.src = e.target.result;
+    preview.style.display = 'block';
+    document.getElementById('thumbPlaceholder').style.display = 'none';
+    document.getElementById('analyzeBtn').disabled = false;
+    document.getElementById('clearImgBtn').style.display = '';
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
+function clearUserImage(){
+  userImgFile = null; userImgB64 = null; userImgMime = null;
+  document.getElementById('userImgPreview').style.display = 'none';
+  document.getElementById('userImgPreview').src = '';
+  document.getElementById('thumbPlaceholder').style.display = '';
+  document.getElementById('analyzeBtn').disabled = true;
+  document.getElementById('clearImgBtn').style.display = 'none';
+}
+
+async function analyzeUserImage(){
+  var apiKey = document.getElementById('apiKey').value.trim();
+  if(!apiKey){ showToast('⚠️ APIキーを入力してください'); return; }
+  if(!userImgB64){ showToast('⚠️ 先に画像をアップロードしてください'); return; }
+  var btn = document.getElementById('analyzeBtn');
+  btn.disabled = true; btn.textContent = '⏳ 解析中...';
+  try{
+    // v3のanalyzeRefImagesと同じプロンプト・モデルを流用
+    var parts = [
+      {inline_data:{mime_type:userImgMime, data:userImgB64}},
+      {text:'以下の画像はマンガのキャラクターシートです。各キャラクターについてJSONのみを返してください。\nappearanceには「身長, 髪色・髪型, 服装の色と種類, 持ち物（色・形を簡潔に）」を記述してください。\n[\n{"name":"名前","attr":"性別・年齢など","appearance":"162cm, 茶髪ロング, 白いブラウス, 赤い革製ショルダーバッグ","personality":"性格","speech":"口調・語尾のクセ","traits":"あるある・定番パターン"}\n]'}
+    ];
+    var body = {contents:[{role:'user',parts:parts}],generationConfig:{temperature:0.3}};
+    var res = await fetch(GEMINI_BASE+'gemini-2.5-pro:generateContent?key='+apiKey,
+      {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    var data = await res.json();
+    if(data.error) throw new Error(data.error.message);
+    var text = ((data.candidates||[])[0]?.content?.parts||[]).map(function(p){return p.text||'';}).join('');
+    var m = text.match(/\[[\s\S]*\]/);
+    if(!m) throw new Error('解析失敗');
+    var charas = JSON.parse(m[0]);
+    if(!charas.length) throw new Error('キャラクターが検出されませんでした');
+    var c = charas[0];
+    // 各フィールドに反映
+    if(c.name) document.getElementById('userName').value = c.name;
+    if(c.attr) document.getElementById('userAttr').value = c.attr;
+    if(c.appearance) document.getElementById('userAppearance').value = c.appearance;
+    if(c.speech || c.personality){
+      var sp = [c.personality, c.speech].filter(Boolean).join('。');
+      document.getElementById('userSpeech').value = sp;
+    }
+    showToast('✅ キャラクター情報を読み取りました');
+  }catch(e){
+    showToast('❌ '+friendlyError(e));
+  }finally{
+    btn.disabled = false; btn.textContent = '🤖 AIで外見を読み取る';
+  }
+}
+
+// ===== API =====
+function fileToBase64(file){
+  return new Promise(function(res,rej){
+    var r=new FileReader();
+    r.onload=function(){res(r.result.split(',')[1]);};
+    r.onerror=rej; r.readAsDataURL(file);
+  });
+}
+
+async function urlToBase64(url){
+  var res=await fetch(url);
+  var blob=await res.blob();
+  return new Promise(function(resolve,reject){
+    var r=new FileReader();
+    r.onload=function(){resolve({data:r.result.split(',')[1],mimeType:blob.type});};
+    r.onerror=reject; r.readAsDataURL(blob);
+  });
+}
+
+async function callText(apiKey,sysPrompt,userPrompt,temperature){
+  var temp=(temperature!==undefined)?temperature:0.9;
+  var body={system_instruction:{parts:[{text:sysPrompt}]},contents:[{role:'user',parts:[{text:userPrompt}]}],generationConfig:{temperature:temp}};
+  var url=GEMINI_BASE+YAML_MODEL+':generateContent?key='+apiKey;
+  for(var attempt=0;attempt<=RETRY_DELAYS.length;attempt++){
+    try{
+      var res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      var data=await res.json();
+      if(data.error){
+        var emsg=data.error.message||'';
+        if(isRetryable({message:emsg})&&attempt<RETRY_DELAYS.length){
+          logMsg('⚠️ 混雑中 → '+Math.round(RETRY_DELAYS[attempt]/1000)+'秒後リトライ','info');
+          await sleep(RETRY_DELAYS[attempt]); continue;
+        }
+        throw new Error(emsg);
+      }
+      return ((data.candidates||[])[0]?.content?.parts||[]).map(function(p){return p.text||'';}).join('');
+    }catch(e){
+      if(isRetryable(e)&&attempt<RETRY_DELAYS.length){
+        logMsg('⚠️ '+e.message+' → '+Math.round(RETRY_DELAYS[attempt]/1000)+'秒後リトライ','info');
+        await sleep(RETRY_DELAYS[attempt]);
+      } else throw e;
+    }
+  }
+  throw new Error('リトライ上限に達しました');
+}
+
+async function callImageWithRefs(apiKey,prompt,charImg,layoutFiles){
+  var parts=[];
+  if(charImg) parts.push({inline_data:{mime_type:charImg.mimeType,data:charImg.data}});
+  // ユーザー参照画像
+  if(userImgB64) parts.push({inline_data:{mime_type:userImgMime,data:userImgB64}});
+  for(var i=0;i<layoutFiles.length;i++){
+    var b64=await fileToBase64(layoutFiles[i]);
+    parts.push({inline_data:{mime_type:layoutFiles[i].type,data:b64}});
+  }
+  parts.push({text:prompt});
+  var body={contents:[{role:'user',parts:parts}],generationConfig:{responseModalities:['TEXT','IMAGE']}};
+  var url=GEMINI_BASE+IMG_MODEL+':generateContent?key='+apiKey;
+  for(var attempt=0;attempt<=RETRY_DELAYS.length;attempt++){
+    if(stopRequested) throw new Error('停止しました');
+    var controller=new AbortController();
+    activeAbortControllers.push(controller);
+    var tid=setTimeout(function(){controller.abort();},90000);
+    try{
+      var res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:controller.signal});
+      clearTimeout(tid);
+      var data=await res.json();
+      if(data.error){
+        var emsg=data.error.message||'';
+        if(isRetryable({message:emsg})&&attempt<RETRY_DELAYS.length){
+          logMsg('⚠️ 混雑中 → '+Math.round(RETRY_DELAYS[attempt]/1000)+'秒後リトライ（画像）','info');
+          await sleep(RETRY_DELAYS[attempt]); continue;
+        }
+        throw new Error(emsg);
+      }
+      return ((data.candidates||[])[0]?.content?.parts||[]);
+    }catch(e){
+      clearTimeout(tid);
+      if(e.name==='AbortError') e=new Error('タイムアウト（90秒）');
+      if(isRetryable(e)&&attempt<RETRY_DELAYS.length){
+        logMsg('⚠️ '+e.message+' → '+Math.round(RETRY_DELAYS[attempt]/1000)+'秒後リトライ（画像）','info');
+        await sleep(RETRY_DELAYS[attempt]);
+      } else throw e;
+    }
+  }
+  throw new Error('リトライ上限に達しました');
+}
+
+// ===== YAML前処理 =====
+function preprocessYaml(yamlOutput){
+  // セルフチェック宣言部分を除去（【セルフチェック完了】〜【舞台・小道具メモ】の前まで）
+  var cleaned = yamlOutput.replace(/【セルフチェック完了】[\s\S]*?(?=【舞台・小道具メモ】|【画像生成AIへの絶対指示】|```yaml)/,'');
+
+  var instructionMatch=cleaned.match(/【画像生成AIへの絶対指示】([\s\S]*?)(?=```yaml)/);
+  var yamlMatch=cleaned.match(/```ya?ml[\s\S]*?\n([\s\S]*?)```/);
+  if(!yamlMatch) return {promptForImage:cleaned,layoutPattern:'T3-E'};
+  var layoutPattern='T3-E';
+  var lm=yamlMatch[1].match(/layout_pattern\s*:\s*["']?([A-Z0-9-]+)["']?/);
+  if(lm) layoutPattern=lm[1];
+
+  var header;
+  if(instructionMatch){
+    // モデルが出力したヘッダーをそのまま使用
+    var instrText=instructionMatch[1];
+    header='【画像生成AIへの絶対指示】\n'+instrText.split('\n').filter(function(l){return l.trim()!=='';}).join('\n')+'\n\n';
+  } else {
+    // フォールバック：キャラ名を動的に構築
+    var c = selectedMode ? CHARS[selectedMode] : null;
+    var userName = document.getElementById('userName').value.trim()||'ユーザーキャラ';
+    var charaNames = c ? c.name+'、'+userName : userName;
+    header='【画像生成AIへの絶対指示】\n';
+    header+='・アスペクト比：1:1.6\n';
+    header+='・左から読む\n';
+    header+='・横書き\n';
+    header+='・左上に「左から読みます」と明記すること\n';
+    header+='・日本語\n';
+    header+='・'+charaNames+'のキャラクターを使用してください。それぞれの参照画像と同じ顔・デザインにしてください。\n';
+    header+='・各キャラクターの服装・髪型はcharacter_infosのdescriptionから絶対に変更しないこと。\n';
+    header+='・題名は要りません\n\n';
+  }
+
+  var layoutNote='・コマ割参照画像（'+layoutPattern+'）を参照してコマを配置してください\n';
+  if(userImgB64) layoutNote+='・2枚目の参照画像はユーザーキャラクターです。同じ顔・デザインにしてください。\n';
+  return {promptForImage:header+layoutNote+'```yaml\n'+yamlMatch[1]+'\n```',layoutPattern:layoutPattern};
+}
+
+// ===== ユーザープロンプト構築 =====
+function buildUserPrompt(topic,pageNum,prevContext){
+  var c=CHARS[selectedMode];
+  var userName=document.getElementById('userName').value.trim()||'ユーザー';
+  var userAttr=document.getElementById('userAttr').value.trim();
+  var userAppearance=document.getElementById('userAppearance').value.trim();
+  var userSpeech=document.getElementById('userSpeech').value.trim();
+  var locs=LOCATIONS[selectedMode];
+
+  var prompt='【固定キャラクター】\n';
+  prompt+='■ '+c.name+'（'+c.attr+'）\n';
+  prompt+='  外見（固定）: '+c.description+'\n';
+  prompt+='  性格: '+c.personality+'\n';
+  prompt+='  口調: '+c.speech+'\n';
+  prompt+='  定番: '+c.traits+'\n\n';
+
+  prompt+='【ユーザーキャラクター】\n';
+  prompt+='■ '+userName+(userAttr?'（'+userAttr+'）':'')+'\n';
+  if(userAppearance) prompt+='  外見（固定）: '+userAppearance+'\n';
+  if(userSpeech) prompt+='  口調・性格: '+userSpeech+'\n';
+  if(userImgB64) prompt+='  ※ユーザーキャラの参照画像あり（画像生成時に2枚目の参照画像として渡されます）\n';
+  prompt+='\n';
+
+  prompt+='【世界観・舞台候補】\nページごとに異なる場所を選ぶこと（連続使用禁止）:\n';
+  locs.forEach(function(l){prompt+='- '+l+'\n';});
+  prompt+='\n';
+
+  if(selectedMode==='violetta'){
+    prompt+='【ストーリーモード】悩み相談\n';
+    prompt+=userName+'がヴィオレッタに悩みを打ち明ける。ヴィオレッタは高飛車・毒舌・上から目線で分析するが、結果的に的を射た助言をする。\n\n';
+  } else {
+    prompt+='【ストーリーモード】自慢話（うんざり黒江）\n';
+    prompt+=userName+'が黒江にしつこく自慢話を聞かせ続ける。黒江はずっと無表情・短い相槌で耐えているが、内心はうんざりしている（表情・仕草・コーヒーを飲む頻度などで表現）。最終ページp.'+pageTotal+'でのみ限界を迎え、ボソッと本音が漏れてオチをつける。p.'+pageTotal+'以外では黒江は感情を出さないこと。\n\n';
+  }
+
+  prompt+='【お題】\n'+topic+'\n\n';
+  prompt+='【タスク】\n';
+  prompt+='上記をもとに4ページ漫画のPage '+pageNum+' のYAMLのみを生成してください。\n';
+  prompt+='YAMLを出力する前にセルフチェックを実施し、結果を宣言してからYAMLを出力してください。\n';
+  if(pageNum===1) prompt+='Page 1のpanel 1は必ず実景背景を使用してください。\n';
+  else prompt+='Page '+pageNum+' はpanel 2以降のいずれか1コマに必ず実景背景を配置してください（panel 1への配置は禁止）。\n';
+  prompt+='\nアスペクト比：1:1.6（固定）\n今回出力するのは Page '+pageNum+' のみです。';
+  if(prevContext) prompt+='\n\n'+prevContext;
+  return prompt;
+}
+
+// ===== UIロック =====
+function lockUI(lock){
+  var targets = ['modeVioletta','modeKuroe','previewVioletta','previewKuroe',
+    'userImgInput','analyzeBtn','clearImgBtn','userName','userAttr','userAppearance','userSpeech',
+    'userImgArea'];
+  // カード単位でロック
+  document.querySelectorAll('.card').forEach(function(card, i){
+    if(i < 3) { // APIキーカード・キャラ選択・ユーザーキャラの3カード
+      if(lock) card.classList.add('ui-locked');
+      else card.classList.remove('ui-locked');
+    }
+  });
+  document.getElementById('stopBtn').style.display = lock ? '' : 'none';
+  // 生成中クラスをbodyに付与・解除（再試行ボタンのグレーアウト制御）
+  if(lock) document.body.classList.add('is-generating');
+  else document.body.classList.remove('is-generating');
+}
+
+// ===== 強制ストップ（逐次フローでは生成中ページのみ中断） =====
+function stopGeneration(){
+  if(!isGenerating) return;
+  stopRequested = true;
+  activeAbortControllers.forEach(function(c){ try{c.abort();}catch(e){} });
+  activeAbortControllers = [];
+  logMsg('⏹ 停止リクエスト送信','info');
+  showToast('⏹ 停止しています...');
+}
+
+// ===== 生成フロー（逐次） =====
+var currentTopic = '';
+
+async function startGeneration(){
+  var apiKey=document.getElementById('apiKey').value.trim();
+  if(!apiKey){showToast('⚠️ APIキーを入力してください');return;}
+  if(!selectedMode){showToast('⚠️ キャラクターを選んでください');return;}
+  if(!systemPrompt){showToast('⚠️ システムプロンプトが読み込まれていません');return;}
+  var topicCore=document.getElementById('topicText').value.trim();
+  if(!topicCore){showToast('⚠️ お題を入力してください');return;}
+  var userName=document.getElementById('userName').value.trim();
+  var userAppearance=document.getElementById('userAppearance').value.trim();
+  if(!userName||!userAppearance){showToast('⚠️ あなたのキャラクターを設定してください');return;}
+
+  var topicSuffix = selectedMode==='violetta' ? 'の悩み' : 'の自慢';
+  currentTopic = '「'+topicCore+'」'+topicSuffix;
+
+  var btn=document.getElementById('startBtn');
+  btn.disabled=true; btn.textContent='⏳ 生成中...';
+  document.getElementById('pagesArea').innerHTML='';
+  pageYamls=[]; pageData=[];
+  isGenerating=true; stopRequested=false; activeAbortControllers=[];
+  setStatus('busy','生成中'); showProgress(true);
+  lockUI(true);
+
+  // Page1だけ生成してあとはボタン待ち
+  await generatePage(1);
+}
+
+// 1ページ分を生成する（YAML→画像）
+async function generatePage(pageNum){
+  var apiKey=document.getElementById('apiKey').value.trim();
+  var pagesArea=document.getElementById('pagesArea');
+
+  // ページカードがなければ作る
+  if(!document.getElementById('pcard-'+pageNum)){
+    var card=document.createElement('div');
+    card.className='page-card'; card.id='pcard-'+pageNum;
+    card.innerHTML=
+      '<div class="page-header">'+
+      '<div class="page-num">p.'+pageNum+'</div>'+
+      '<div class="page-title">Page '+pageNum+' / '+pageTotal+'</div>'+
+      '<div class="page-status" id="ps-'+pageNum+'">生成中...</div></div>'+
+      '<div class="page-body" id="pb-'+pageNum+'"></div>';
+    pagesArea.appendChild(card);
+    card.scrollIntoView({behavior:'smooth',block:'start'});
+  }
+
+  var statusEl=document.getElementById('ps-'+pageNum);
+  var bodyEl=document.getElementById('pb-'+pageNum);
+
+  // ===== YAML生成 =====
+  statusEl.className='page-status'; statusEl.textContent='⏳ YAML生成中...';
+  bodyEl.innerHTML='<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:20px;">YAML生成中...</div>';
+  setProgress('📝','Page '+pageNum+' YAML生成中...');
+  setBar(Math.round((pageNum-1)/pageTotal*100),false);
+  logMsg('📝 Page '+pageNum+' YAML生成中...','info');
+
+  var prevContext='';
+  for(var p=0;p<pageNum-1;p++){
+    if(pageYamls[p]){
+      var m=pageYamls[p].match(/```ya?ml[\s\S]*?\n([\s\S]*?)```/);
+      if(m) prevContext+='\n【Page '+(p+1)+' 生成済みYAML（立ち位置・場所・小道具を引き継ぐこと）】\n```yaml\n'+m[1]+'\n```\n';
+      var mm=pageYamls[p].match(/【舞台・小道具メモ】([\s\S]*?)(?=【画像生成AIへの絶対指示】|```yaml)/);
+      if(mm) prevContext+='\n【前ページ舞台メモ（必ず引き継ぐこと）】\n'+mm[1]+'\n';
+    }
+  }
+
+  var userPrompt=buildUserPrompt(currentTopic,pageNum,prevContext);
+  var yamlRaw;
+  try{
+    yamlRaw=await callText(apiKey,systemPrompt,userPrompt,0.7);
+  }catch(e){
+    statusEl.className='page-status error'; statusEl.textContent='❌ YAML失敗';
+    bodyEl.innerHTML='<div style="color:#f87171;font-size:12px;padding:14px;">❌ YAML生成エラー: '+escHtml(friendlyError(e))+'</div>'+
+      '<div class="page-actions">'+
+      '<button class="btn btn-danger btn-sm" onclick="retryPage('+pageNum+')">🔄 再試行</button>'+
+      (pageNum<pageTotal?'<button class="btn btn-sm" onclick="goNextPage('+pageNum+')">⏭ スキップして次へ</button>':'')+
+      '</div>';
+    logMsg('❌ Page '+pageNum+' YAML失敗: '+friendlyError(e),'err');
+    isGenerating=false; lockUI(false);
+    return;
+  }
+  pageYamls[pageNum-1]=addSerialNumbers(yamlRaw);
+  logMsg('✅ Page '+pageNum+' YAML完成','ok');
+
+  // ===== 画像生成 =====
+  statusEl.textContent='⏳ 画像生成中...';
+  bodyEl.innerHTML='<div style="color:var(--theme-a);font-size:12px;text-align:center;padding:20px;">🎨 画像生成中...</div>';
+  setProgress('🎨','Page '+pageNum+' 画像生成中...');
+  logMsg('🎨 Page '+pageNum+' 画像生成中...','info');
+
+  try{
+    var preprocessed=preprocessYaml(yamlRaw);
+    var layoutName=preprocessed.layoutPattern||'T3-E';
+    var layoutB64=LAYOUT_IMAGES[layoutName];
+    var layoutFile=null;
+    if(layoutB64){
+      var b64data=layoutB64.split(',')[1];
+      var byteStr=atob(b64data);
+      var arr=new Uint8Array(byteStr.length);
+      for(var bi=0;bi<byteStr.length;bi++) arr[bi]=byteStr.charCodeAt(bi);
+      var blob=new Blob([arr],{type:'image/png'});
+      layoutFile=new File([blob],'layout_'+layoutName+'.png',{type:'image/png'});
+    }
+    var charImg=charImages[selectedMode]||null;
+    var refs=layoutFile?[layoutFile]:[];
+    var imgParts=await callImageWithRefs(apiKey,preprocessed.promptForImage,charImg,refs);
+    var images=imgParts.filter(function(p){return p.inlineData&&/^image\//.test(p.inlineData.mimeType);});
+    if(!images.length) throw new Error('画像が返ってきませんでした');
+    var imgSrc='data:'+images[images.length-1].inlineData.mimeType+';base64,'+images[images.length-1].inlineData.data;
+    pageData[pageNum-1]={imgSrc:imgSrc};
+
+    var isLast=(pageNum>=pageTotal);
+    var nextBtn=isLast
+      ? '<button class="btn btn-primary" onclick="showFinished()" style="margin-top:4px;">🎉 完成！</button>'
+      : '<button class="btn btn-accent btn-next" onclick="goNextPage('+pageNum+')">次のページへ → p.'+(pageNum+1)+'</button>';
+
+    bodyEl.innerHTML='<div class="page-img-wrap"><img src="'+imgSrc+'" alt="Page '+pageNum+'"></div>'+
+      '<div class="page-actions">'+
+      '<button class="btn btn-success btn-sm" onclick="dlPageImage('+pageNum+')">⬇️ 画像保存</button>'+
+      '<button class="btn btn-sm" onclick="retryPageImgOnly('+pageNum+')">🔄 再生成</button>'+
+      '</div>'+
+      '<div class="btn-next-wrap" style="margin-top:10px;">'+nextBtn+'</div>';
+    statusEl.className='page-status done'; statusEl.textContent='✅ 完成';
+    setBar(Math.round(pageNum/pageTotal*100),false);
+    logMsg('✅ Page '+pageNum+' 完成','ok');
+
+    if(isLast){
+      setProgress('✅',pageTotal+'/'+pageTotal+'ページ完成！');
+      setStatus('ready','完了');
+    } else {
+      setProgress('✅','p.'+pageNum+' 完成 — 次へボタンを押してください');
+      setStatus('ready','待機中');
+    }
+  }catch(e){
+    statusEl.className='page-status error'; statusEl.textContent='❌ 画像失敗';
+    bodyEl.innerHTML='<div style="color:#f87171;font-size:12px;text-align:center;padding:14px;">❌ '+escHtml(friendlyError(e))+'</div>'+
+      '<div class="page-actions">'+
+      '<button class="btn btn-danger btn-sm" onclick="retryPageImgOnly('+pageNum+')">🔄 画像のみ再試行</button>'+
+      '<button class="btn btn-sm" onclick="retryPage('+pageNum+')">🔄 最初から再試行</button>'+
+      (pageNum<pageTotal?'<button class="btn btn-sm" onclick="goNextPage('+pageNum+')">⏭ スキップして次へ</button>':'')+
+      '</div>';
+    logMsg('❌ Page '+pageNum+' 画像失敗: '+friendlyError(e),'err');
+    setProgress('❌','p.'+pageNum+' 失敗');
+    setStatus('ready','待機中');
+  }
+
+  isGenerating=false;
+  lockUI(false);
+}
+
+// 次ページへ進む（ボタンから呼ばれる）
+async function goNextPage(pageNum){
+  var nextPage=pageNum+1;
+  if(nextPage>pageTotal) return;
+  isGenerating=true; stopRequested=false; activeAbortControllers=[];
+  setStatus('busy','生成中');
+  lockUI(true);
+  // 「次へ」ボタン自体をロック
+  var nextBtns=document.querySelectorAll('.btn-next');
+  nextBtns.forEach(function(b){b.disabled=true;b.textContent='⏳ 生成中...';});
+  await generatePage(nextPage);
+}
+
+// 全ページ完成表示
+function showFinished(){
+  var btn=document.getElementById('startBtn');
+  btn.disabled=false; btn.textContent='🎨 マンガを生成する';
+  // 前ページに残っている「次へ」ボタンエリアを全部消す
+  document.querySelectorAll('.btn-next-wrap').forEach(function(el){el.remove();});
+  showToast('🎉 全'+pageTotal+'ページ完成！');
+  setProgress('🎉','全'+pageTotal+'ページ完成！');
+}
+
+// 画像のみ再生成
+async function retryPageImgOnly(pageNum){
+  if(isGenerating){showToast('⏳ 生成中です。しばらくお待ちください');return;}
+  if(isRetrying) return;
+  if(!pageYamls[pageNum-1]){await retryPage(pageNum);return;}
+  var apiKey=document.getElementById('apiKey').value.trim();
+  if(!apiKey){showToast('⚠️ APIキーを入力してください');return;}
+  isRetrying=true;
+  var statusEl=document.getElementById('ps-'+pageNum);
+  var bodyEl=document.getElementById('pb-'+pageNum);
+  statusEl.className='page-status'; statusEl.textContent='⏳ 画像再生成中...';
+  bodyEl.innerHTML='<div style="color:var(--theme-a);font-size:12px;text-align:center;padding:20px;">🎨 画像再生成中...</div>';
+  logMsg('🎨 Page '+pageNum+' 画像のみ再生成...','info');
+  try{
+    var preprocessed=preprocessYaml(pageYamls[pageNum-1]);
+    var layoutName=preprocessed.layoutPattern||'T3-E';
+    var layoutB64=LAYOUT_IMAGES[layoutName];
+    var layoutFile=null;
+    if(layoutB64){
+      var b64data=layoutB64.split(',')[1];
+      var byteStr=atob(b64data);
+      var arr=new Uint8Array(byteStr.length);
+      for(var bi=0;bi<byteStr.length;bi++) arr[bi]=byteStr.charCodeAt(bi);
+      var blob=new Blob([arr],{type:'image/png'});
+      layoutFile=new File([blob],'layout_'+layoutName+'.png',{type:'image/png'});
+    }
+    var apiKey2=document.getElementById('apiKey').value.trim();
+    var charImg=charImages[selectedMode]||null;
+    var refs=layoutFile?[layoutFile]:[];
+    var imgParts=await callImageWithRefs(apiKey2,preprocessed.promptForImage,charImg,refs);
+    var images=imgParts.filter(function(p){return p.inlineData&&/^image\//.test(p.inlineData.mimeType);});
+    if(!images.length) throw new Error('画像が返ってきませんでした');
+    var imgSrc='data:'+images[images.length-1].inlineData.mimeType+';base64,'+images[images.length-1].inlineData.data;
+    pageData[pageNum-1]={imgSrc:imgSrc};
+
+    var isLast=(pageNum>=pageTotal);
+    var nextBtn=isLast
+      ? '<button class="btn btn-primary" onclick="showFinished()" style="margin-top:4px;">🎉 完成！</button>'
+      : '<button class="btn btn-accent btn-next" onclick="goNextPage('+pageNum+')">次のページへ → p.'+(pageNum+1)+'</button>';
+
+    bodyEl.innerHTML='<div class="page-img-wrap"><img src="'+imgSrc+'" alt="Page '+pageNum+'"></div>'+
+      '<div class="page-actions">'+
+      '<button class="btn btn-success btn-sm" onclick="dlPageImage('+pageNum+')">⬇️ 画像保存</button>'+
+      '<button class="btn btn-sm" onclick="retryPageImgOnly('+pageNum+')">🔄 再生成</button>'+
+      '</div>'+
+      '<div class="btn-next-wrap" style="margin-top:10px;">'+nextBtn+'</div>';
+    statusEl.className='page-status done'; statusEl.textContent='✅ 完成';
+    logMsg('✅ Page '+pageNum+' 再生成完成','ok');
+  }catch(e){
+    statusEl.className='page-status error'; statusEl.textContent='❌ 失敗';
+    bodyEl.innerHTML='<div style="color:#f87171;font-size:12px;padding:14px;">❌ '+escHtml(friendlyError(e))+'</div>'+
+      '<div class="page-actions">'+
+      '<button class="btn btn-danger btn-sm" onclick="retryPageImgOnly('+pageNum+')">🔄 画像のみ再試行</button>'+
+      '<button class="btn btn-sm" onclick="retryPage('+pageNum+')">🔄 最初から再試行</button>'+
+      (pageNum<pageTotal?'<button class="btn btn-sm" onclick="goNextPage('+pageNum+')">⏭ スキップして次へ</button>':'')+
+      '</div>';
+    logMsg('❌ Page '+pageNum+' 再生成失敗: '+friendlyError(e),'err');
+  }finally{
+    isRetrying=false;
+  }
+}
+
+// YAMLから最初から再試行
+async function retryPage(pageNum){
+  if(isGenerating){showToast('⏳ 生成中です。しばらくお待ちください');return;}
+  if(isRetrying) return;
+  var apiKey=document.getElementById('apiKey').value.trim();
+  if(!apiKey){showToast('⚠️ APIキーを入力してください');return;}
+  isRetrying=true;
+  pageYamls[pageNum-1]=null;
+  try{
+    isGenerating=true; lockUI(true);
+    await generatePage(pageNum);
+  }catch(e){
+    logMsg('❌ Page '+pageNum+' 再試行失敗: '+friendlyError(e),'err');
+  }finally{
+    isRetrying=false;
+  }
+}
+
+function dlImage(src,fn){
+  var a=document.createElement('a'); a.href=src; a.download=fn; a.click();
+}
+
+function dlPageImage(pageNum){
+  var pd=pageData[pageNum-1];
+  if(!pd||!pd.imgSrc){showToast('⚠️ 画像がまだありません');return;}
+  dlImage(pd.imgSrc,'manga_p'+pageNum+'.png');
+}
+
+// ===== 初期化 =====
+async function init(){
+  document.getElementById('loadOverlay').classList.add('show');
+  document.getElementById('loadText').textContent='システムプロンプトを読み込み中...';
+  try{
+    // Base64内蔵プロンプトをデコード
+    systemPrompt = decodeURIComponent(escape(atob(_SP)));
+
+    document.getElementById('loadText').textContent='キャラクター画像を読み込み中...';
+    var modes=['violetta','kuroe'];
+    for(var i=0;i<modes.length;i++){
+      var m=modes[i];
+      try{
+        charImages[m]=await urlToBase64(CHARS[m].imageUrl+'?t='+Date.now());
+      }catch(e){
+        console.warn('キャラ画像読み込み失敗('+m+'): '+e.message);
+        charImages[m]=null;
+      }
+    }
+    setStatus('ready','準備完了');
+    var saved=localStorage.getItem('manga_maker_key');
+    if(saved) document.getElementById('apiKey').value=saved;
+    document.getElementById('apiKey').addEventListener('change',function(e){
+      localStorage.setItem('manga_maker_key',e.target.value);
+    });
+  }catch(e){
+    var errEl=document.getElementById('initError');
+    errEl.style.display='block';
+    errEl.textContent='⚠️ 初期化に失敗しました: '+e.message+'\n→ GitHubにsystem_prompt.txtをアップロードしてください。';
+    setStatus('ready','エラー');
+  }finally{
+    document.getElementById('loadOverlay').classList.remove('show');
+  }
+}
+
+window.addEventListener('load', init);
+</script>
+</body>
+</html>
