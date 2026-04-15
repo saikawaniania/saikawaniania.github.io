@@ -1000,10 +1000,10 @@ function addSerialNumbers(yamlText) {
     var line = lines[i];
     if (/effects\s*:/.test(line))  { inEffects = true; }
     if (/^\s+lines\s*:/.test(line)) { inEffects = false; }
-    if (!inEffects && /- text : "/.test(line)) {
+    if (!inEffects && /- text\s*:\s*"/.test(line)) {
       var num = circled[count] || '(' + (count+1) + ')';
       count++;
-      line = line.replace('- text : "', '- text : "' + num);
+      line = line.replace(/- text\s*:\s*"/, function(m){ return m + num; });
     }
     result.push(line);
   }
