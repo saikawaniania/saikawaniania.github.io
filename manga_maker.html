@@ -13,7 +13,6 @@
   gtag('config', 'G-XXXXXXXXXX');
 </script>
 <link href="https://fonts.googleapis.com/css2?family=Kaisei+Decol:wght@400;700&family=M+PLUS+Rounded+1c:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 /* ===== CSS変数（テーマ） ===== */
 :root {
@@ -466,18 +465,6 @@ body.is-generating .page-actions .btn-sm {
 .btn-danger:active { transform: scale(.93); filter: brightness(1.2); }
 .btn-sm:not(:disabled):active { transform: scale(.93); background: var(--surface3); }
 
-/* ===== Drive バッジ ===== */
-.drive-badge {
-  font-size: 11px; padding: 4px 10px; border-radius: 100px;
-  font-family: 'Space Mono', monospace; white-space: nowrap; display: inline-block;
-}
-.drive-badge.uploading {
-  background: var(--theme-bg); color: var(--theme-a); border: 1px solid var(--theme-border);
-  animation: pulse 1.2s infinite;
-}
-.drive-badge.done { background: rgba(74,222,128,.1); color: #4ade80; border: 1px solid rgba(74,222,128,.3); }
-.drive-badge.error { background: rgba(248,113,113,.1); color: #f87171; border: 1px solid rgba(248,113,113,.3); }
-
 /* ===== エラー表示 ===== */
 .init-error {
   background: rgba(127,29,29,.2);
@@ -524,24 +511,6 @@ body.is-generating .page-actions .btn-sm {
   <div class="card">
     <div class="card-label">🔑 Gemini API Key</div>
     <input type="password" id="apiKey" placeholder="AIza..." autocomplete="off">
-  </div>
-
-  <!-- Google Drive -->
-  <div class="card">
-    <div class="card-label">☁️ Google Drive 自動アップロード <span style="font-size:10px;font-weight:400;color:var(--text-muted);">（任意）</span></div>
-    <div class="field">
-      <label class="field-label">OAuth クライアントID <span style="font-size:10px;color:var(--text-muted);">（Google Cloud Console で作成）</span></label>
-      <input type="text" id="driveClientId" placeholder="xxxx.apps.googleusercontent.com" autocomplete="off">
-    </div>
-    <div class="field">
-      <label class="field-label">アップロード先フォルダID <span style="font-size:10px;color:var(--text-muted);">（DriveフォルダURLの末尾の文字列）</span></label>
-      <input type="text" id="driveFolderId" placeholder="1ABC...XYZ" autocomplete="off">
-    </div>
-    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-      <button class="btn btn-accent" id="driveConnectBtn" onclick="driveConnect()">🔗 Googleでサインイン</button>
-      <button class="btn btn-sm" id="driveDisconnectBtn" onclick="driveDisconnect()" style="display:none;">切断</button>
-      <span id="driveStatusText" style="font-size:12px;color:var(--text-muted);"></span>
-    </div>
   </div>
 
   <!-- モード選択 -->
@@ -1235,7 +1204,6 @@ async function generatePage(pageNum){
     if(!images.length) throw new Error('画像が返ってきませんでした');
     var imgSrc='data:'+images[images.length-1].inlineData.mimeType+';base64,'+images[images.length-1].inlineData.data;
     pageData[pageNum-1]={imgSrc:imgSrc};
-    driveUploadPage(pageNum,imgSrc);
 
     var isLast=(pageNum>=pageTotal);
     var nextBtn=isLast
@@ -1245,7 +1213,6 @@ async function generatePage(pageNum){
     bodyEl.innerHTML='<div class="page-img-wrap"><img src="'+imgSrc+'" alt="Page '+pageNum+'"></div>'+
       '<div class="page-actions">'+
       '<button class="btn btn-success btn-sm" onclick="dlPageImage('+pageNum+')">⬇️ 画像保存</button>'+
-      (driveIsReady()?'<span id="drive-badge-'+pageNum+'" class="drive-badge uploading">☁️ アップロード中...</span>':'')+
       '<button class="btn btn-sm" onclick="retryPageImgOnly('+pageNum+')">🔄 再生成</button>'+
       '</div>'+
       '<div class="btn-next-wrap" style="margin-top:10px;">'+nextBtn+'</div>';
@@ -1334,7 +1301,6 @@ async function retryPageImgOnly(pageNum){
     if(!images.length) throw new Error('画像が返ってきませんでした');
     var imgSrc='data:'+images[images.length-1].inlineData.mimeType+';base64,'+images[images.length-1].inlineData.data;
     pageData[pageNum-1]={imgSrc:imgSrc};
-    driveUploadPage(pageNum,imgSrc);
 
     var isLast=(pageNum>=pageTotal);
     var nextBtn=isLast
@@ -1344,7 +1310,6 @@ async function retryPageImgOnly(pageNum){
     bodyEl.innerHTML='<div class="page-img-wrap"><img src="'+imgSrc+'" alt="Page '+pageNum+'"></div>'+
       '<div class="page-actions">'+
       '<button class="btn btn-success btn-sm" onclick="dlPageImage('+pageNum+')">⬇️ 画像保存</button>'+
-      (driveIsReady()?'<span id="drive-badge-'+pageNum+'" class="drive-badge uploading">☁️ アップロード中...</span>':'')+
       '<button class="btn btn-sm" onclick="retryPageImgOnly('+pageNum+')">🔄 再生成</button>'+
       '</div>'+
       '<div class="btn-next-wrap" style="margin-top:10px;">'+nextBtn+'</div>';
@@ -1392,89 +1357,6 @@ function dlPageImage(pageNum){
   dlImage(pd.imgSrc,'manga_p'+pageNum+'.png');
 }
 
-// ===== Google Drive 自動アップロード =====
-var driveAccessToken = null;
-var driveTokenExpiry = 0;
-
-function driveIsReady() {
-  return !!(driveAccessToken && Date.now() < driveTokenExpiry && document.getElementById('driveFolderId').value.trim());
-}
-
-function driveConnect() {
-  var clientId = document.getElementById('driveClientId').value.trim();
-  if (!clientId) { showToast('⚠️ クライアントIDを入力してください'); return; }
-  if (typeof google === 'undefined' || !google.accounts) {
-    showToast('⚠️ Google APIの読み込みが完了していません。少し待ってから再試行してください');
-    return;
-  }
-  document.getElementById('driveConnectBtn').disabled = true;
-  document.getElementById('driveStatusText').textContent = '認証中...';
-  var client = google.accounts.oauth2.initTokenClient({
-    client_id: clientId,
-    scope: 'https://www.googleapis.com/auth/drive.file',
-    callback: function(response) {
-      document.getElementById('driveConnectBtn').disabled = false;
-      if (response.error) {
-        document.getElementById('driveStatusText').textContent = '❌ ' + response.error;
-        driveAccessToken = null;
-        return;
-      }
-      driveAccessToken = response.access_token;
-      driveTokenExpiry = Date.now() + ((response.expires_in || 3600) - 60) * 1000;
-      document.getElementById('driveStatusText').textContent = '✅ 接続済み';
-      document.getElementById('driveConnectBtn').style.display = 'none';
-      document.getElementById('driveDisconnectBtn').style.display = '';
-      localStorage.setItem('drive_client_id', clientId);
-      localStorage.setItem('drive_folder_id', document.getElementById('driveFolderId').value.trim());
-      showToast('✅ Google Drive に接続しました');
-    }
-  });
-  client.requestAccessToken();
-}
-
-function driveDisconnect() {
-  var tok = driveAccessToken;
-  driveAccessToken = null;
-  driveTokenExpiry = 0;
-  document.getElementById('driveConnectBtn').style.display = '';
-  document.getElementById('driveDisconnectBtn').style.display = 'none';
-  document.getElementById('driveStatusText').textContent = '';
-  if (tok && typeof google !== 'undefined' && google.accounts) {
-    google.accounts.oauth2.revoke(tok, function(){});
-  }
-  showToast('Drive 接続を解除しました');
-}
-
-async function driveUploadPage(pageNum, imgSrc) {
-  if (!driveIsReady()) return;
-  var folderId = document.getElementById('driveFolderId').value.trim();
-  var badgeEl = document.getElementById('drive-badge-' + pageNum);
-  if (badgeEl) { badgeEl.textContent = '☁️ アップロード中...'; badgeEl.className = 'drive-badge uploading'; }
-  try {
-    var parts = imgSrc.split(',');
-    var mime = parts[0].match(/:(.*?);/)[1];
-    var bstr = atob(parts[1]);
-    var arr = new Uint8Array(bstr.length);
-    for (var i = 0; i < bstr.length; i++) arr[i] = bstr.charCodeAt(i);
-    var blob = new Blob([arr], {type: mime});
-    var metadata = JSON.stringify({name: 'manga_p' + pageNum + '.png', parents: [folderId]});
-    var form = new FormData();
-    form.append('metadata', new Blob([metadata], {type: 'application/json'}));
-    form.append('file', blob);
-    var res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-      method: 'POST',
-      headers: {Authorization: 'Bearer ' + driveAccessToken},
-      body: form
-    });
-    if (!res.ok) { var d = await res.json(); throw new Error((d.error && d.error.message) || res.status); }
-    if (badgeEl) { badgeEl.textContent = '✅ Drive保存済み'; badgeEl.className = 'drive-badge done'; }
-    logMsg('☁️ p.' + pageNum + ' Drive アップロード完了', 'ok');
-  } catch(e) {
-    if (badgeEl) { badgeEl.textContent = '❌ アップロード失敗'; badgeEl.className = 'drive-badge error'; }
-    logMsg('☁️ p.' + pageNum + ' Drive アップロード失敗: ' + e.message, 'err');
-  }
-}
-
 // ===== 初期化 =====
 async function init(){
   document.getElementById('loadOverlay').classList.add('show');
@@ -1499,16 +1381,6 @@ async function init(){
     if(saved) document.getElementById('apiKey').value=saved;
     document.getElementById('apiKey').addEventListener('change',function(e){
       localStorage.setItem('manga_maker_key',e.target.value);
-    });
-    var savedCid=localStorage.getItem('drive_client_id');
-    if(savedCid) document.getElementById('driveClientId').value=savedCid;
-    var savedFid=localStorage.getItem('drive_folder_id');
-    if(savedFid) document.getElementById('driveFolderId').value=savedFid;
-    document.getElementById('driveClientId').addEventListener('change',function(e){
-      localStorage.setItem('drive_client_id',e.target.value);
-    });
-    document.getElementById('driveFolderId').addEventListener('change',function(e){
-      localStorage.setItem('drive_folder_id',e.target.value);
     });
   }catch(e){
     var errEl=document.getElementById('initError');
